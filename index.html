@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VM FEBER</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-client.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Hovedmeny">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true">VF</div>
+          <div>
+            <p class="eyebrow">VM FEBER</p>
+            <h1>Tippeportal</h1>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Sider">
+          <button class="nav-item active" data-view="overview">Oversikt</button>
+          <button class="nav-item" data-view="predictions">Mine tips</button>
+          <button class="nav-item" data-view="leagues">Ligaer</button>
+          <button class="nav-item" data-view="leaderboards">Poengtavler</button>
+          <button class="nav-item" data-view="admin">Admin</button>
+        </nav>
+
+        <section class="login-panel" id="loginPanel">
+          <p class="panel-title">Innlogging</p>
+          <p class="muted">Magic link: skriv e-post, klikk lenken du får, og du er inne.</p>
+          <label for="usernameInput">Brukernavn</label>
+          <input id="usernameInput" placeholder="Vises på poengtavler" />
+          <label for="emailInput">E-post</label>
+          <input id="emailInput" type="email" placeholder="navn@eksempel.no" />
+          <label for="inviteInput">Invitasjonskode</label>
+          <div class="input-row">
+            <input id="inviteInput" placeholder="Valgfritt" />
+            <button id="loginButton">Send</button>
+          </div>
+          <p class="microcopy" id="loginFeedback">Demoen logger deg inn lokalt.</p>
+        </section>
+
+        <section class="user-panel hidden" id="userPanel">
+          <p class="panel-title">Innlogget</p>
+          <p id="userEmail"></p>
+          <button class="ghost-button" id="logoutButton">Logg ut</button>
+        </section>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Norsk tid · åpen registrering · private ligaer</p>
+            <h2 id="viewTitle">Oversikt</h2>
+          </div>
+          <div class="status-strip">
+            <span>Full VM: ikke låst</span>
+            <span>Daglig: frist 12:00</span>
+            <span id="connectionStatus">Demo-modus</span>
+          </div>
+        </header>
+
+        <section class="view active" id="overview">
+          <div class="hero-band">
+            <div>
+              <p class="eyebrow">VM FEBER</p>
+              <h3>To konkurranser, en hovedtabell, og private ligaer med kode.</h3>
+              <p>
+                Full VM-konkurranse låses 2 timer før første kamp. Daglig tipping låses kl. 12:00 norsk tid for dagens kamper.
+              </p>
+            </div>
+            <div class="fixture-card" aria-label="Neste frister">
+              <div class="fixture-row">
+                <span>Full VM</span>
+                <strong>15. juni · 19:00</strong>
+              </div>
+              <div class="fixture-row">
+                <span>Dagens tips</span>
+                <strong>12:00</strong>
+              </div>
+              <div class="fixture-row">
+                <span>Synlighet</span>
+                <strong>Kun egne ligaer</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric">
+              <span class="metric-value">2</span>
+              <span class="metric-label">konkurranseformer</span>
+            </article>
+            <article class="metric">
+              <span class="metric-value">4</span>
+              <span class="metric-label">private ligaer i demo</span>
+            </article>
+            <article class="metric">
+              <span class="metric-value">8</span>
+              <span class="metric-label">bonusspørsmål klare</span>
+            </article>
+          </div>
+
+          <div class="section-grid">
+            <section>
+              <div class="section-heading">
+                <h3>Konkurranser</h3>
+              </div>
+              <div class="mode-list" id="modeList"></div>
+            </section>
+            <section>
+              <div class="section-heading">
+                <h3>Poengregler</h3>
+              </div>
+              <div class="rules-list" id="rulesList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="predictions">
+          <div class="section-heading">
+            <h3>Mine tips</h3>
+            <div class="segmented" role="tablist" aria-label="Velg konkurranse">
+              <button class="segment active" data-prediction-mode="daily">Daglig</button>
+              <button class="segment" data-prediction-mode="full">Full VM</button>
+            </div>
+          </div>
+          <div class="match-list" id="matchList"></div>
+          <div class="bonus-panel" id="bonusPanel"></div>
+        </section>
+
+        <section class="view" id="leagues">
+          <div class="section-heading">
+            <h3>Ligaer</h3>
+          </div>
+          <div class="league-join">
+            <label for="leagueCode">Bli med i liga</label>
+            <div class="input-row">
+              <input id="leagueCode" placeholder="Skriv ligakode" />
+              <button id="joinLeagueButton">Bli med</button>
+            </div>
+            <p class="microcopy" id="leagueFeedback">Kun medlemmer kan se poengtavlen i en privat liga.</p>
+          </div>
+          <div class="league-grid" id="leagueGrid"></div>
+        </section>
+
+        <section class="view" id="leaderboards">
+          <div class="section-heading">
+            <h3>Poengtavler</h3>
+            <select id="leaderboardSelect" aria-label="Velg poengtavle"></select>
+          </div>
+          <div class="leaderboard" id="leaderboard"></div>
+        </section>
+
+        <section class="view" id="admin">
+          <div class="section-heading">
+            <h3>Admin</h3>
+          </div>
+          <div class="admin-grid">
+            <section class="admin-panel">
+              <h4>Invitasjoner</h4>
+              <p class="muted">Lag invitasjonskoder slik at du ser hvem som kom via deg, og hvem som registrerte seg åpent.</p>
+              <div class="invite-list" id="inviteList"></div>
+            </section>
+            <section class="admin-panel">
+              <h4>Resultater</h4>
+              <p class="muted">Resultater kan legges inn manuelt i første versjon. Senere kan vi hente kampdata automatisk.</p>
+              <div class="result-list" id="resultList"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
