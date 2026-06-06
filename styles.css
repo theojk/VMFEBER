@@ -11,6 +11,16 @@
   --shadow: 0 18px 50px rgba(32, 48, 39, 0.12);
 }
 
+html[data-theme="dark"] {
+  --bg: #10151c;
+  --panel: #181f29;
+  --ink: #f3f6f8;
+  --muted: #a9b4bd;
+  --line: #303946;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -156,11 +166,78 @@ h4 {
 .login-panel,
 .user-panel,
 .league-join,
-.admin-panel {
+.admin-panel,
+.settings-panel {
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.settings-panel {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.settings-panel button {
+  min-height: 42px;
+  margin-top: 8px;
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: var(--blue);
+  color: white;
+  font-weight: 800;
+}
+
+.admin-heading {
+  margin-top: 30px;
+}
+
+.site-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 50px;
+  padding: 24px 0 4px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.site-footer strong,
+.site-footer span {
+  display: block;
+}
+
+.site-footer strong {
+  color: var(--ink);
+}
+
+.footer-links {
+  text-align: right;
+}
+
+.footer-links a {
+  color: var(--blue);
+}
+
+html[data-theme="dark"] .sidebar,
+html[data-theme="dark"] .prediction-toolbar {
+  background: rgba(24, 31, 41, 0.94);
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select {
+  background: #111821;
 }
 
 .panel-title {
@@ -718,6 +795,7 @@ img.flag {
   .hero-band,
   .section-grid,
   .admin-grid,
+  .settings-grid,
   .metric-grid,
   .league-grid {
     grid-template-columns: 1fr;
@@ -751,7 +829,7 @@ img.flag {
     bottom: 0;
     left: 0;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 0;
     padding: 6px 8px;
     border-top: 1px solid var(--line);
@@ -775,6 +853,15 @@ img.flag {
 
   .nav-item.admin-only {
     display: none !important;
+  }
+
+  .site-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .footer-links {
+    text-align: left;
   }
 
   .topbar,

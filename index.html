@@ -26,7 +26,7 @@
           <button class="nav-item" data-view="predictions"><i class="nav-icon" data-lucide="target"></i><span>Mine tips</span></button>
           <button class="nav-item" data-view="leaderboards"><i class="nav-icon" data-lucide="trophy"></i><span>Poengtavler</span></button>
           <button class="nav-item" data-view="leagues"><i class="nav-icon" data-lucide="users"></i><span>Ligaer</span></button>
-          <button class="nav-item admin-only hidden" data-view="admin"><i class="nav-icon" data-lucide="settings"></i><span>Admin</span></button>
+          <button class="nav-item" data-view="settings"><i class="nav-icon" data-lucide="settings"></i><span>Innstillinger</span></button>
         </nav>
 
         <section class="login-panel" id="loginPanel">
@@ -149,30 +149,77 @@
           <div class="leaderboard" id="leaderboard"></div>
         </section>
 
-        <section class="view" id="admin">
+        <section class="view" id="settings">
           <div class="section-heading">
-            <h3>Admin</h3>
+            <h3>Innstillinger</h3>
           </div>
-          <div class="admin-grid">
-            <section class="admin-panel">
+          <div class="settings-grid">
+            <section class="settings-panel">
+              <h4>Profil</h4>
+              <label for="settingsUsername">Brukernavn</label>
+              <input id="settingsUsername" placeholder="Vises på poengtavler" />
+              <p class="microcopy" id="settingsEmail">E-post lastes...</p>
+              <button id="saveProfileButton">Lagre profil</button>
+              <p class="microcopy" id="settingsFeedback"></p>
+            </section>
+            <section class="settings-panel">
+              <h4>Visning</h4>
+              <label for="defaultCompetition">Standard konkurranse</label>
+              <select id="defaultCompetition">
+                <option value="daily">Daglig</option>
+                <option value="full">Full VM</option>
+              </select>
+              <label for="themeSelect">Tema</label>
+              <select id="themeSelect">
+                <option value="system">Følg enheten</option>
+                <option value="light">Lyst</option>
+                <option value="dark">Mørkt</option>
+              </select>
+            </section>
+            <section class="settings-panel">
+              <h4>Personvern og konto</h4>
+              <p class="muted">VM FEBER lagrer e-post, brukernavn, ligamedlemskap og tips for å drifte konkurransen. Opplysningene deles ikke kommersielt.</p>
+              <button class="ghost-button" id="settingsLogoutButton">Logg ut</button>
+            </section>
+          </div>
+
+          <div class="admin-only hidden">
+            <div class="section-heading admin-heading">
+              <h3>Administrasjon</h3>
+            </div>
+            <div class="admin-grid">
+              <section class="admin-panel">
               <h4>Invitasjoner</h4>
               <p class="muted">Lag invitasjonskoder slik at du ser hvem som kom via deg, og hvem som registrerte seg åpent.</p>
               <div class="invite-list" id="inviteList"></div>
-            </section>
-            <section class="admin-panel">
+              </section>
+              <section class="admin-panel">
               <h4>Resultater</h4>
               <p class="muted">Hent kampoppsett og resultater fra football-data.org.</p>
               <button id="syncMatchesButton">Synkroniser kampdata</button>
               <p class="microcopy" id="syncFeedback">Kun admin kan starte synkronisering.</p>
               <div class="result-list" id="resultList"></div>
-            </section>
-            <section class="admin-panel">
+              </section>
+              <section class="admin-panel">
               <h4>Tips-backuper</h4>
               <p class="muted">Uforanderlige snapshots som opprettes automatisk ved fristene.</p>
               <div class="backup-list" id="backupList"></div>
-            </section>
+              </section>
+            </div>
           </div>
         </section>
+
+        <footer class="site-footer">
+          <div>
+            <strong>VM FEBER</strong>
+            <span>Uavhengig, privat tippekonkurranse. Ikke tilknyttet eller godkjent av FIFA, NFF eller andre fotballforbund.</span>
+          </div>
+          <div class="footer-links">
+            <a href="mailto:olejoergen@gmail.com">Kontakt: olejoergen@gmail.com</a>
+            <span>Football data provided by the Football-Data.org API</span>
+            <span>© 2026 VM FEBER</span>
+          </div>
+        </footer>
       </main>
     </div>
 

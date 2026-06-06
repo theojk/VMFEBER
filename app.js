@@ -8,6 +8,7 @@ const state = {
   predictions: {},
   backups: [],
   isAdmin: false,
+  theme: localStorage.getItem("vmFeberTheme") || "system",
 };
 
 const competitions = [
@@ -349,12 +350,55 @@ const viewTitles = {
   predictions: "Mine tips",
   leagues: "Ligaer",
   leaderboards: "Poengtavler",
-  admin: "Admin",
+  settings: "Innstillinger",
 };
 
 function save() {
   localStorage.setItem("vmFeberUser", JSON.stringify(state.user));
   localStorage.setItem("vmFeberLeagues", JSON.stringify(state.leagues));
+}
+
+function applyTheme(theme = state.theme) {
+  state.theme = theme;
+  localStorage.setItem("vmFeberTheme", theme);
+  const resolvedTheme = theme === "system"
+    ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    : theme;
+  document.documentElement.dataset.theme = resolvedTheme;
+}
+
+async function saveProfileSettings() {
+  if (!state.sessionUserId) return;
+  const username = document.querySelector("#settingsUsername").value.trim();
+  const feedback = document.querySelector("#settingsFeedback");
+  if (!username) {
+    feedback.textContent = "Brukernavn kan ikke være tomt.";
+    return;
+  }
+
+  const { data, error } = await window.vmFeberSupabase
+    .rpc("update_own_username", { new_username: username });
+  if (error) {
+    feedback.textContent = error.message;
+    return;
+  }
+
+  state.user.username = data || username;
+  save();
+  renderUser();
+  feedback.textContent = "Profilen er lagret.";
+}
+
+function renderSettings() {
+  document.querySelector("#settingsUsername").value = state.user?.username || "";
+  document.querySelector("#settingsEmail").textContent = state.user?.email || "Logg inn for å endre profil.";
+  document.querySelector("#defaultCompetition").value = state.predictionMode;
+  document.querySelector("#themeSelect").value = state.theme;
+  document.querySelector("#saveProfileButton").disabled = !state.sessionUserId;
+  document.querySelector("#settingsLogoutButton").disabled = !state.sessionUserId;
+  document.querySelectorAll(".segment").forEach((segment) => {
+    segment.classList.toggle("active", segment.dataset.predictionMode === state.predictionMode);
+  });
 }
 
 async function syncSupabaseSession() {
@@ -657,10 +701,10 @@ function renderUser() {
     userPanel.classList.add("hidden");
     setPredictionFeedback("Logg inn for å lagre tipsene dine.");
   }
+  renderSettings();
 }
 
 function setView(viewId) {
-  if (viewId === "admin" && !state.isAdmin) return;
   document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === viewId));
   document.querySelector("#viewTitle").textContent = viewTitles[viewId];
@@ -725,7 +769,7 @@ function bindEvents() {
     renderUser();
   });
 
-  document.querySelector("#logoutButton").addEventListener("click", () => {
+  const logout = () => {
     state.user = null;
     state.sessionUserId = null;
     state.predictions = {};
@@ -736,7 +780,21 @@ function bindEvents() {
     }
     renderUser();
     setView("overview");
+  };
+  document.querySelector("#logoutButton").addEventListener("click", logout);
+  document.querySelector("#settingsLogoutButton").addEventListener("click", logout);
+  document.querySelector("#saveProfileButton").addEventListener("click", saveProfileSettings);
+
+  document.querySelector("#defaultCompetition").addEventListener("change", (event) => {
+    state.predictionMode = event.target.value;
+    localStorage.setItem("vmFeberDefaultCompetition", state.predictionMode);
+    document.querySelectorAll(".segment").forEach((segment) => {
+      segment.classList.toggle("active", segment.dataset.predictionMode === state.predictionMode);
+    });
+    renderMatches();
   });
+
+  document.querySelector("#themeSelect").addEventListener("change", (event) => applyTheme(event.target.value));
 
   document.querySelectorAll(".segment").forEach((button) => {
     button.addEventListener("click", () => {
@@ -788,6 +846,8 @@ function bindEvents() {
 }
 
 async function init() {
+  state.predictionMode = localStorage.getItem("vmFeberDefaultCompetition") || state.predictionMode;
+  applyTheme();
   await syncSupabaseSession();
   await loadMatches();
   await loadPredictions();

@@ -88,6 +88,9 @@ Daglig tipping speiler Full VM-tipset dersom brukeren ikke har lagt inn et eget
 daglig tips. Ved dagsfristen kopieres manglende tips permanent til den daglige
 konkurransen for backup og poengberegning.
 
+Kjor `supabase-settings-setup.sql` for sikre profilinnstillinger. Den begrenser
+brukere til a endre eget brukernavn, uten tilgang til adminflagget.
+
 ## Automatisk backup av alle tips
 
 Ved hver frist lagres et uforanderlig snapshot av alle relevante tips i
