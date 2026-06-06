@@ -15,7 +15,33 @@ create table if not exists public.prediction_backups (
   email_error text
 );
 
+alter table public.prediction_backups
+  add column if not exists backup_key text,
+  add column if not exists user_count integer;
+
+update public.prediction_backups
+set backup_key =
+  case
+    when backup_type = 'daglig' then 'daglig-' || coalesce(match_date::text, id::text)
+    else 'full-vm-' || id::text
+  end
+where backup_key is null;
+
+update public.prediction_backups
+set user_count = 0
+where user_count is null;
+
+alter table public.prediction_backups
+  alter column backup_key set not null,
+  alter column user_count set not null;
+
+create unique index if not exists prediction_backups_backup_key_idx
+  on public.prediction_backups (backup_key);
+
 alter table public.prediction_backups enable row level security;
+
+drop policy if exists "Admins can read prediction backups"
+  on public.prediction_backups;
 
 create policy "Admins can read prediction backups"
   on public.prediction_backups for select
