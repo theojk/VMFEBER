@@ -29,7 +29,7 @@ const rules = [
   ["Riktig toppscorer", "5 poeng"],
 ];
 
-const matches = [
+let matches = [
   {
     id: "m1",
     home: "Norge",
@@ -58,6 +58,54 @@ const matches = [
     deadline: "Full VM: 19:00 · Daglig: 12:00",
   },
 ];
+
+function formatKickoff(kickoffAt) {
+  return new Intl.DateTimeFormat("nb-NO", {
+    timeZone: "Europe/Oslo",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(kickoffAt));
+}
+
+async function loadMatches() {
+  if (!state.supabaseReady) return;
+
+  const { data, error } = await window.vmFeberSupabase
+    .from("matches")
+    .select("id,stage,group_name,home_team,away_team,home_crest,away_crest,kickoff_at,status")
+    .order("kickoff_at", { ascending: true });
+
+  if (error || !data?.length) return;
+
+  matches = data.map((match) => ({
+    id: match.id,
+    home: match.home_team,
+    away: match.away_team,
+    homeCrest: match.home_crest,
+    awayCrest: match.away_crest,
+    homeColor: "#e9efe7",
+    awayColor: "#e9efe7",
+    date: formatKickoff(match.kickoff_at),
+    deadline: "Full VM: samlet frist · Daglig: kl. 12:00",
+  }));
+}
+
+async function syncWorldCupMatches() {
+  const feedback = document.querySelector("#syncFeedback");
+  feedback.textContent = "Synkroniserer kampdata...";
+
+  const { data, error } = await window.vmFeberSupabase.functions.invoke("sync-world-cup");
+  if (error || data?.error) {
+    feedback.textContent = `Synkronisering feilet: ${data?.error || error.message}`;
+    return;
+  }
+
+  await loadMatches();
+  renderMatches();
+  feedback.textContent = `${data.synced} kamper ble synkronisert.`;
+}
 
 const leagues = [
   { id: "total", name: "Hovedkonkurranse", code: "ALL", members: 48, open: true },
@@ -218,12 +266,12 @@ function renderMatches() {
     .map(
       (match) => `
         <article class="match-row">
-          <div class="team"><span class="flag" style="background:${match.homeColor}"></span>${match.home}</div>
+          <div class="team">${match.homeCrest ? `<img class="flag" src="${match.homeCrest}" alt="" />` : `<span class="flag" style="background:${match.homeColor}"></span>`}${match.home}</div>
           <div class="score-inputs">
             <input type="number" min="0" aria-label="${match.home} mål" />
             <input type="number" min="0" aria-label="${match.away} mål" />
           </div>
-          <div class="team"><span class="flag" style="background:${match.awayColor}"></span>${match.away}</div>
+          <div class="team">${match.awayCrest ? `<img class="flag" src="${match.awayCrest}" alt="" />` : `<span class="flag" style="background:${match.awayColor}"></span>`}${match.away}</div>
           <div class="deadline">${match.date}<br />${match.deadline}</div>
         </article>
       `,
@@ -410,10 +458,19 @@ function bindEvents() {
   document.querySelector("#leaderboardSelect").addEventListener("change", (event) => {
     renderLeaderboard(event.target.value);
   });
+
+  document.querySelector("#syncMatchesButton").addEventListener("click", () => {
+    if (!state.supabaseReady || !state.user) {
+      document.querySelector("#syncFeedback").textContent = "Du må være innlogget som admin.";
+      return;
+    }
+    syncWorldCupMatches();
+  });
 }
 
 async function init() {
   await syncSupabaseSession();
+  await loadMatches();
   renderModes();
   renderRules();
   renderMatches();
