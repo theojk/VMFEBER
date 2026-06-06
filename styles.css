@@ -171,6 +171,21 @@ h4 {
   font-size: 0.78rem;
 }
 
+.prediction-feedback {
+  margin: -8px 0 16px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.prediction-feedback.success {
+  color: var(--green);
+}
+
+.prediction-feedback.error {
+  color: var(--red);
+}
+
 label {
   display: block;
   margin-bottom: 6px;
@@ -353,6 +368,26 @@ select {
   gap: 10px;
 }
 
+.backup-list {
+  display: grid;
+  gap: 10px;
+}
+
+.backup-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.backup-row span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
 .mode-card,
 .rule-row,
 .match-row,
@@ -405,7 +440,7 @@ select {
 
 .match-row {
   display: grid;
-  grid-template-columns: minmax(130px, 1fr) 160px minmax(130px, 1fr) 130px;
+  grid-template-columns: minmax(130px, 1fr) 160px minmax(130px, 1fr) 150px 90px;
   gap: 12px;
   align-items: center;
 }
@@ -440,6 +475,20 @@ img.flag {
   min-width: 0;
   text-align: center;
   font-weight: 850;
+}
+
+.save-prediction {
+  min-height: 40px;
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  background: var(--ink);
+  color: white;
+  font-weight: 800;
+}
+
+.save-prediction:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .deadline {
@@ -496,6 +545,11 @@ img.flag {
   background: var(--ink);
   color: white;
   font-weight: 800;
+}
+
+.admin-panel button:disabled {
+  cursor: wait;
+  opacity: 0.55;
 }
 
 .leader-row {
@@ -572,6 +626,7 @@ img.flag {
     align-items: flex-start;
     flex-direction: column;
   }
+
 
   h2,
   .hero-band h3 {

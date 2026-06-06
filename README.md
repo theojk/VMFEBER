@@ -66,3 +66,42 @@ Send meg disse to fra Supabase, sa kan jeg lime dem inn riktig:
 - anon public key
 
 Dette er ikke service role key. Ikke send service role key.
+
+## Kampdata fra football-data.org
+
+API-nokkelen skal lagres som en Supabase Edge Function-secret, aldri i frontend
+eller GitHub.
+
+1. Regenerer football-data.org-nokkelen dersom den har blitt delt.
+2. Kjor `supabase-football-data-setup.sql` i Supabase SQL Editor.
+3. Opprett Edge Function med innholdet fra `supabase/functions/sync-world-cup/index.ts`.
+4. Legg inn secret med navnet `FOOTBALL_DATA_API_KEY`.
+5. Deploy funksjonen `sync-world-cup`.
+6. Kall funksjonen mens du er innlogget som admin for a fylle `matches`.
+
+## Lagring av tips
+
+Kjor `supabase-predictions-setup.sql` i Supabase SQL Editor. Den oppretter
+serverstyrt lagring og handhever begge fristene i databasen.
+
+Daglig tipping speiler Full VM-tipset dersom brukeren ikke har lagt inn et eget
+daglig tips. Ved dagsfristen kopieres manglende tips permanent til den daglige
+konkurransen for backup og poengberegning.
+
+## Automatisk backup av alle tips
+
+Ved hver frist lagres et uforanderlig snapshot av alle relevante tips i
+`prediction_backups`. Samme snapshot sendes som CSV til admin.
+
+1. Kjor `supabase-backup-setup.sql` i SQL Editor.
+2. Deploy `supabase/functions/create-prediction-backup/index.ts` som
+   `create-prediction-backup`.
+3. Legg inn Edge Function-secrets:
+   - `RESEND_API_KEY`
+   - `BACKUP_EMAIL`
+   - `BACKUP_CRON_SECRET`
+   - valgfritt: `BACKUP_FROM_EMAIL`
+4. Fyll inn placeholderne og kjor `supabase-backup-schedule.sql`.
+
+`BACKUP_EMAIL` bør være e-postadressen som eier Resend-kontoen dersom
+Resends testavsender `onboarding@resend.dev` brukes. Da trengs ikke eget domene.

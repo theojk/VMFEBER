@@ -3,6 +3,10 @@ const state = {
   leagues: JSON.parse(localStorage.getItem("vmFeberLeagues") || '["total","kollektiv"]'),
   predictionMode: "daily",
   supabaseReady: Boolean(window.vmFeberSupabaseReady),
+  sessionUserId: null,
+  competitionIds: {},
+  predictions: {},
+  backups: [],
 };
 
 const competitions = [
@@ -69,6 +73,31 @@ function formatKickoff(kickoffAt) {
   }).format(new Date(kickoffAt));
 }
 
+function osloDateKey(date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Oslo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(date));
+}
+
+function visibleMatches() {
+  if (state.predictionMode === "full" || !matches.some((match) => match.kickoffAt)) {
+    return matches;
+  }
+
+  const today = osloDateKey(new Date());
+  const todayMatches = matches.filter((match) => osloDateKey(match.kickoffAt) === today);
+  if (todayMatches.length) return todayMatches;
+
+  const nextMatch = matches.find((match) => new Date(match.kickoffAt) > new Date());
+  if (!nextMatch) return [];
+
+  const nextMatchDay = osloDateKey(nextMatch.kickoffAt);
+  return matches.filter((match) => osloDateKey(match.kickoffAt) === nextMatchDay);
+}
+
 async function loadMatches() {
   if (!state.supabaseReady) return;
 
@@ -88,8 +117,113 @@ async function loadMatches() {
     homeColor: "#e9efe7",
     awayColor: "#e9efe7",
     date: formatKickoff(match.kickoff_at),
+    kickoffAt: match.kickoff_at,
     deadline: "Full VM: samlet frist · Daglig: kl. 12:00",
   }));
+}
+
+function predictionKey(competitionId, matchId) {
+  return `${competitionId}:${matchId}`;
+}
+
+async function loadPredictions() {
+  if (!state.supabaseReady || !state.sessionUserId) return;
+
+  const { data: competitionRows } = await window.vmFeberSupabase
+    .from("competitions")
+    .select("id,slug")
+    .eq("is_active", true);
+
+  state.competitionIds = Object.fromEntries(
+    (competitionRows || []).map((competition) => [competition.slug, competition.id]),
+  );
+
+  const { data: predictionRows } = await window.vmFeberSupabase
+    .from("match_predictions")
+    .select("competition_id,match_id,home_score,away_score,source,updated_at");
+
+  state.predictions = Object.fromEntries(
+    (predictionRows || []).map((prediction) => [
+      predictionKey(prediction.competition_id, prediction.match_id),
+      prediction,
+    ]),
+  );
+}
+
+async function loadBackups() {
+  if (!state.supabaseReady || !state.sessionUserId) return;
+
+  const { data } = await window.vmFeberSupabase
+    .from("prediction_backups")
+    .select("backup_type,match_date,cutoff_at,created_at,user_count,prediction_count,email_sent,email_error")
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  state.backups = data || [];
+}
+
+function activeCompetitionSlug() {
+  return state.predictionMode === "full" ? "full-vm" : "daglig";
+}
+
+function activePrediction(matchId) {
+  const competitionId = state.competitionIds[activeCompetitionSlug()];
+  const directPrediction = state.predictions[predictionKey(competitionId, matchId)];
+  if (directPrediction || state.predictionMode === "full") {
+    return directPrediction?.source === "full-vm-inherited"
+      ? { ...directPrediction, inheritedFromFull: true }
+      : directPrediction;
+  }
+
+  const fullCompetitionId = state.competitionIds["full-vm"];
+  const fullPrediction = state.predictions[predictionKey(fullCompetitionId, matchId)];
+  return fullPrediction ? { ...fullPrediction, inheritedFromFull: true } : undefined;
+}
+
+function setPredictionFeedback(message, type = "") {
+  const feedback = document.querySelector("#predictionFeedback");
+  feedback.textContent = message;
+  feedback.className = `prediction-feedback ${type}`.trim();
+}
+
+async function savePrediction(matchId) {
+  if (!state.sessionUserId) {
+    setPredictionFeedback("Du må være innlogget for å lagre tips.", "error");
+    return;
+  }
+
+  const row = document.querySelector(`[data-match-id="${matchId}"]`);
+  const homeScore = row.querySelector('[data-score="home"]').value;
+  const awayScore = row.querySelector('[data-score="away"]').value;
+  const button = row.querySelector(".save-prediction");
+
+  if (homeScore === "" || awayScore === "") {
+    setPredictionFeedback("Fyll inn både hjemme- og bortemål.", "error");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Lagrer";
+
+  const { data, error } = await window.vmFeberSupabase.rpc("save_match_prediction", {
+    competition_slug: activeCompetitionSlug(),
+    selected_match_id: matchId,
+    predicted_home_score: Number(homeScore),
+    predicted_away_score: Number(awayScore),
+  });
+
+  if (error) {
+    setPredictionFeedback(error.message, "error");
+    button.disabled = false;
+    button.textContent = "Lagre";
+    return;
+  }
+
+  const saved = Array.isArray(data) ? data[0] : data;
+  state.predictions[predictionKey(saved.competition_id, saved.match_id)] = saved;
+  setPredictionFeedback("Tipset er lagret.", "success");
+  button.disabled = false;
+  button.textContent = "Lagret";
 }
 
 async function syncWorldCupMatches() {
@@ -185,7 +319,13 @@ async function syncSupabaseSession() {
 
   const { data } = await window.vmFeberSupabase.auth.getSession();
   const session = data.session;
-  if (!session?.user) return;
+  if (!session?.user) {
+    state.user = null;
+    state.sessionUserId = null;
+    save();
+    return;
+  }
+  state.sessionUserId = session.user.id;
 
   const pendingProfile = JSON.parse(localStorage.getItem("vmFeberPendingProfile") || "null");
   let { data: profile } = await window.vmFeberSupabase
@@ -281,19 +421,25 @@ function renderMatches() {
       `
       : "";
 
-  document.querySelector("#matchList").innerHTML = matches
+  document.querySelector("#matchList").innerHTML = visibleMatches()
     .map(
-      (match) => `
-        <article class="match-row">
+      (match) => {
+        const prediction = activePrediction(match.id);
+        return `
+        <article class="match-row" data-match-id="${match.id}">
           <div class="team">${match.homeCrest ? `<img class="flag" src="${match.homeCrest}" alt="" />` : `<span class="flag" style="background:${match.homeColor}"></span>`}${match.home}</div>
           <div class="score-inputs">
-            <input type="number" min="0" aria-label="${match.home} mål" />
-            <input type="number" min="0" aria-label="${match.away} mål" />
+            <input type="number" min="0" data-score="home" value="${prediction?.home_score ?? ""}" aria-label="${match.home} mål" />
+            <input type="number" min="0" data-score="away" value="${prediction?.away_score ?? ""}" aria-label="${match.away} mål" />
           </div>
           <div class="team">${match.awayCrest ? `<img class="flag" src="${match.awayCrest}" alt="" />` : `<span class="flag" style="background:${match.awayColor}"></span>`}${match.away}</div>
           <div class="deadline">${match.date}<br />${match.deadline}</div>
+          <button class="save-prediction" data-save-prediction="${match.id}" ${state.sessionUserId ? "" : "disabled"}>
+            ${prediction?.inheritedFromFull ? "Bruk Full VM" : prediction ? "Lagret" : "Lagre"}
+          </button>
         </article>
-      `,
+      `;
+      },
     )
     .join("");
 
@@ -356,6 +502,19 @@ function renderAdmin() {
   document.querySelector("#resultList").innerHTML = results
     .map(([match, status]) => `<div class="result-row"><strong>${match}</strong><span>${status}</span></div>`)
     .join("");
+
+  document.querySelector("#backupList").innerHTML = state.backups.length
+    ? state.backups
+      .map((backup) => `
+        <div class="backup-row">
+          <strong>${backup.backup_type === "full-vm" ? "Full VM" : `Daglig ${backup.match_date}`}</strong>
+          <strong>${backup.prediction_count} tips</strong>
+          <span>${backup.user_count} registrerte · laget ${formatKickoff(backup.created_at)}</span>
+          <span>${backup.email_sent ? "E-post sendt" : backup.email_error || "E-post ikke sendt"}</span>
+        </div>
+      `)
+      .join("")
+    : '<p class="muted">Ingen backuper er laget ennå.</p>';
 }
 
 function renderUser() {
@@ -376,9 +535,11 @@ function renderUser() {
     loginPanel.classList.add("hidden");
     userPanel.classList.remove("hidden");
     document.querySelector("#userEmail").textContent = `${state.user.username} · ${state.user.email}`;
+    setPredictionFeedback("Tipsene lagres separat for valgt konkurranse.");
   } else {
     loginPanel.classList.remove("hidden");
     userPanel.classList.add("hidden");
+    setPredictionFeedback("Logg inn for å lagre tipsene dine.");
   }
 }
 
@@ -449,6 +610,8 @@ function bindEvents() {
 
   document.querySelector("#logoutButton").addEventListener("click", () => {
     state.user = null;
+    state.sessionUserId = null;
+    state.predictions = {};
     save();
     if (state.supabaseReady) {
       window.vmFeberSupabase.auth.signOut();
@@ -461,8 +624,16 @@ function bindEvents() {
       state.predictionMode = button.dataset.predictionMode;
       document.querySelectorAll(".segment").forEach((segment) => segment.classList.remove("active"));
       button.classList.add("active");
+      setPredictionFeedback(
+        state.sessionUserId ? "Tipsene lagres separat for denne konkurransen." : "Logg inn for å lagre tipsene dine.",
+      );
       renderMatches();
     });
+  });
+
+  document.querySelector("#matchList").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-save-prediction]");
+    if (button) savePrediction(button.dataset.savePrediction);
   });
 
   document.querySelector("#joinLeagueButton").addEventListener("click", () => {
@@ -490,6 +661,8 @@ function bindEvents() {
 async function init() {
   await syncSupabaseSession();
   await loadMatches();
+  await loadPredictions();
+  await loadBackups();
   renderModes();
   renderRules();
   renderMatches();

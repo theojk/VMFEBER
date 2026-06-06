@@ -127,6 +127,9 @@
               <button class="segment" data-prediction-mode="full">Full VM</button>
             </div>
           </div>
+          <p class="prediction-feedback" id="predictionFeedback">
+            Logg inn for å lagre tipsene dine.
+          </p>
           <div class="match-list" id="matchList"></div>
           <div class="bonus-panel" id="bonusPanel"></div>
           <p class="data-credit">Kampdata levert av football-data.org</p>
@@ -171,6 +174,11 @@
               <button id="syncMatchesButton">Synkroniser kampdata</button>
               <p class="microcopy" id="syncFeedback">Kun admin kan starte synkronisering.</p>
               <div class="result-list" id="resultList"></div>
+            </section>
+            <section class="admin-panel">
+              <h4>Tips-backuper</h4>
+              <p class="muted">Uforanderlige snapshots som opprettes automatisk ved fristene.</p>
+              <div class="backup-list" id="backupList"></div>
             </section>
           </div>
         </section>
