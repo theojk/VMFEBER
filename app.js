@@ -7,6 +7,7 @@ const state = {
   competitionIds: {},
   predictions: {},
   backups: [],
+  isAdmin: false,
 };
 
 const competitions = [
@@ -96,6 +97,22 @@ function visibleMatches() {
 
   const nextMatchDay = osloDateKey(nextMatch.kickoffAt);
   return matches.filter((match) => osloDateKey(match.kickoffAt) === nextMatchDay);
+}
+
+function fullDeadline() {
+  const firstKickoff = matches.find((match) => match.kickoffAt)?.kickoffAt;
+  return firstKickoff ? new Date(new Date(firstKickoff).getTime() - 2 * 60 * 60 * 1000) : null;
+}
+
+function dailyDeadline(matchList = visibleMatches()) {
+  const kickoff = matchList.find((match) => match.kickoffAt)?.kickoffAt;
+  if (!kickoff) return null;
+  const date = osloDateKey(kickoff);
+  return new Date(`${date}T10:00:00.000Z`);
+}
+
+function formatDeadline(deadline) {
+  return deadline ? formatKickoff(deadline) : "Ikke tilgjengelig";
 }
 
 async function loadMatches() {
@@ -189,7 +206,7 @@ function setPredictionFeedback(message, type = "") {
 async function savePrediction(matchId) {
   if (!state.sessionUserId) {
     setPredictionFeedback("Du må være innlogget for å lagre tips.", "error");
-    return;
+    return false;
   }
 
   const row = document.querySelector(`[data-match-id="${matchId}"]`);
@@ -199,7 +216,7 @@ async function savePrediction(matchId) {
 
   if (homeScore === "" || awayScore === "") {
     setPredictionFeedback("Fyll inn både hjemme- og bortemål.", "error");
-    return;
+    return false;
   }
 
   button.disabled = true;
@@ -216,7 +233,7 @@ async function savePrediction(matchId) {
     setPredictionFeedback(error.message, "error");
     button.disabled = false;
     button.textContent = "Lagre";
-    return;
+    return false;
   }
 
   const saved = Array.isArray(data) ? data[0] : data;
@@ -224,6 +241,32 @@ async function savePrediction(matchId) {
   setPredictionFeedback("Tipset er lagret.", "success");
   button.disabled = false;
   button.textContent = "Lagret";
+  updateDashboard();
+  updatePredictionToolbar();
+  return true;
+}
+
+async function saveVisiblePredictions() {
+  const button = document.querySelector("#saveVisibleButton");
+  const rows = [...document.querySelectorAll("[data-match-id]")].filter((row) => {
+    return row.querySelector('[data-score="home"]').value !== ""
+      && row.querySelector('[data-score="away"]').value !== "";
+  });
+
+  if (!rows.length) {
+    setPredictionFeedback("Fyll inn minst ett resultat først.", "error");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Lagrer...";
+  let savedCount = 0;
+  for (const row of rows) {
+    if (await savePrediction(row.dataset.matchId)) savedCount += 1;
+  }
+  button.disabled = false;
+  button.textContent = "Lagre synlige tips";
+  setPredictionFeedback(`${savedCount} tips ble lagret.`, "success");
 }
 
 async function syncWorldCupMatches() {
@@ -322,6 +365,7 @@ async function syncSupabaseSession() {
   if (!session?.user) {
     state.user = null;
     state.sessionUserId = null;
+    state.isAdmin = false;
     save();
     return;
   }
@@ -330,7 +374,7 @@ async function syncSupabaseSession() {
   const pendingProfile = JSON.parse(localStorage.getItem("vmFeberPendingProfile") || "null");
   let { data: profile } = await window.vmFeberSupabase
     .from("profiles")
-    .select("username,email,invite_code,registration_source")
+    .select("username,email,invite_code,registration_source,is_admin")
     .eq("id", session.user.id)
     .maybeSingle();
 
@@ -360,6 +404,7 @@ async function syncSupabaseSession() {
     username: profile?.username || session.user.email?.split("@")[0] || "bruker",
     inviteCode: profile?.invite_code || profile?.registration_source || "åpen registrering",
   };
+  state.isAdmin = Boolean(profile?.is_admin);
   save();
 }
 
@@ -384,7 +429,9 @@ async function sendMagicLink(email, username, inviteCode) {
 }
 
 function renderModes() {
-  document.querySelector("#modeList").innerHTML = competitions
+  const list = document.querySelector("#modeList");
+  if (!list) return;
+  list.innerHTML = competitions
     .map(
       (item) => `
         <article class="mode-card">
@@ -405,6 +452,73 @@ function renderRules() {
     .join("");
 }
 
+function countPredictions(slug, matchList) {
+  const competitionId = state.competitionIds[slug];
+  return matchList.filter((match) => state.predictions[predictionKey(competitionId, match.id)]).length;
+}
+
+function nextNorwayMatch() {
+  return matches.find((match) => {
+    const isNorway = match.home.toLowerCase().includes("norway") || match.away.toLowerCase().includes("norway")
+      || match.home.toLowerCase().includes("norge") || match.away.toLowerCase().includes("norge");
+    return isNorway && (!match.kickoffAt || new Date(match.kickoffAt) > new Date());
+  });
+}
+
+function updateDashboard() {
+  const fullCount = countPredictions("full-vm", matches);
+  const dailyMatches = (() => {
+    const previousMode = state.predictionMode;
+    state.predictionMode = "daily";
+    const result = visibleMatches();
+    state.predictionMode = previousMode;
+    return result;
+  })();
+  const previousMode = state.predictionMode;
+  state.predictionMode = "daily";
+  const dailyCount = dailyMatches.filter((match) => activePrediction(match.id)).length;
+  state.predictionMode = previousMode;
+  const norway = nextNorwayMatch();
+  const deadline = fullDeadline();
+
+  document.querySelector("#fullProgressValue").textContent = `${fullCount}/${matches.length}`;
+  document.querySelector("#dailyProgressValue").textContent = `${dailyCount}/${dailyMatches.length}`;
+  document.querySelector("#heroDeadline").textContent = `Full VM-frist: ${formatDeadline(deadline)}. Daglige tips låses kl. 12:00 norsk tid.`;
+  document.querySelector("#saveStatus").textContent = state.sessionUserId
+    ? `${fullCount + dailyCount} tips lagret`
+    : "Logg inn for å tippe";
+
+  const norwayBox = document.querySelector("#norwayNext");
+  if (!norway) {
+    document.querySelector("#nextNorwayValue").textContent = "–";
+    norwayBox.innerHTML = '<p class="muted">Ingen kommende Norge-kamp funnet.</p>';
+    return;
+  }
+
+  document.querySelector("#nextNorwayValue").textContent = norway.date.split(" kl.")[0];
+  document.querySelector("#nextNorwayLabel").textContent = `${norway.home} – ${norway.away}`;
+  norwayBox.innerHTML = `
+    <article class="norway-match">
+      <div class="team">${norway.homeCrest ? `<img class="flag" src="${norway.homeCrest}" alt="" />` : ""}${norway.home}</div>
+      <div class="norway-match-time">${norway.date}</div>
+      <div class="team">${norway.awayCrest ? `<img class="flag" src="${norway.awayCrest}" alt="" />` : ""}${norway.away}</div>
+    </article>`;
+}
+
+function updatePredictionToolbar() {
+  const shownMatches = visibleMatches();
+  const competitionId = state.competitionIds[activeCompetitionSlug()];
+  const explicitCount = shownMatches.filter((match) => state.predictions[predictionKey(competitionId, match.id)]).length;
+  const inheritedCount = state.predictionMode === "daily"
+    ? shownMatches.filter((match) => activePrediction(match.id)?.inheritedFromFull).length
+    : 0;
+  const deadline = state.predictionMode === "full" ? fullDeadline() : dailyDeadline(shownMatches);
+
+  document.querySelector("#predictionProgress").textContent =
+    `${explicitCount} av ${shownMatches.length} kamper lagret${inheritedCount ? ` · ${inheritedCount} arves fra Full VM` : ""}`;
+  document.querySelector("#predictionDeadline").textContent = `Frist: ${formatDeadline(deadline)}`;
+}
+
 function renderMatches() {
   const extra =
     state.predictionMode === "full"
@@ -421,11 +535,14 @@ function renderMatches() {
       `
       : "";
 
+  let lastDay = "";
   document.querySelector("#matchList").innerHTML = visibleMatches()
-    .map(
-      (match) => {
+    .map((match) => {
+        const day = match.kickoffAt ? osloDateKey(match.kickoffAt) : match.date;
+        const heading = day !== lastDay ? `<div class="match-day">${match.date.split(" kl.")[0]}</div>` : "";
+        lastDay = day;
         const prediction = activePrediction(match.id);
-        return `
+        return `${heading}
         <article class="match-row" data-match-id="${match.id}">
           <div class="team">${match.homeCrest ? `<img class="flag" src="${match.homeCrest}" alt="" />` : `<span class="flag" style="background:${match.homeColor}"></span>`}${match.home}</div>
           <div class="score-inputs">
@@ -444,6 +561,7 @@ function renderMatches() {
     .join("");
 
   document.querySelector("#bonusPanel").innerHTML = extra;
+  updatePredictionToolbar();
 }
 
 function renderLeagues() {
@@ -521,11 +639,9 @@ function renderUser() {
   const loginPanel = document.querySelector("#loginPanel");
   const userPanel = document.querySelector("#userPanel");
   const feedback = document.querySelector("#loginFeedback");
-  const connectionStatus = document.querySelector("#connectionStatus");
-
-  if (connectionStatus) {
-    connectionStatus.textContent = state.supabaseReady ? "Supabase koblet til" : "Demo-modus";
-  }
+  document.querySelectorAll(".admin-only").forEach((element) => {
+    element.classList.toggle("hidden", !state.isAdmin);
+  });
 
   if (feedback && !state.supabaseReady) {
     feedback.textContent = "Demo-modus: fyll inn Supabase URL og anon key for ekte magic link.";
@@ -544,6 +660,7 @@ function renderUser() {
 }
 
 function setView(viewId) {
+  if (viewId === "admin" && !state.isAdmin) return;
   document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === viewId));
   document.querySelector("#viewTitle").textContent = viewTitles[viewId];
@@ -612,11 +729,13 @@ function bindEvents() {
     state.user = null;
     state.sessionUserId = null;
     state.predictions = {};
+    state.isAdmin = false;
     save();
     if (state.supabaseReady) {
       window.vmFeberSupabase.auth.signOut();
     }
     renderUser();
+    setView("overview");
   });
 
   document.querySelectorAll(".segment").forEach((button) => {
@@ -631,9 +750,19 @@ function bindEvents() {
     });
   });
 
+  document.querySelector("#continueTipsButton").addEventListener("click", () => setView("predictions"));
+  document.querySelector("#saveVisibleButton").addEventListener("click", saveVisiblePredictions);
+
   document.querySelector("#matchList").addEventListener("click", (event) => {
     const button = event.target.closest("[data-save-prediction]");
     if (button) savePrediction(button.dataset.savePrediction);
+  });
+
+  document.querySelector("#matchList").addEventListener("input", (event) => {
+    if (!event.target.matches("[data-score]")) return;
+    const row = event.target.closest("[data-match-id]");
+    row.querySelector(".save-prediction").textContent = "Lagre";
+    setPredictionFeedback("Du har ulagrede endringer.");
   });
 
   document.querySelector("#joinLeagueButton").addEventListener("click", () => {
@@ -670,7 +799,9 @@ async function init() {
   renderLeaderboardOptions();
   renderAdmin();
   renderUser();
+  updateDashboard();
   bindEvents();
+  if (window.lucide) window.lucide.createIcons();
 }
 
 init();

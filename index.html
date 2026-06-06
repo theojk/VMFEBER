@@ -6,6 +6,7 @@
     <title>VM FEBER</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="supabase-config.js"></script>
     <script src="supabase-client.js"></script>
   </head>
@@ -21,11 +22,11 @@
         </div>
 
         <nav class="nav-list" aria-label="Sider">
-          <button class="nav-item active" data-view="overview">Oversikt</button>
-          <button class="nav-item" data-view="predictions">Mine tips</button>
-          <button class="nav-item" data-view="leagues">Ligaer</button>
-          <button class="nav-item" data-view="leaderboards">Poengtavler</button>
-          <button class="nav-item" data-view="admin">Admin</button>
+          <button class="nav-item active" data-view="overview"><i class="nav-icon" data-lucide="home"></i><span>Oversikt</span></button>
+          <button class="nav-item" data-view="predictions"><i class="nav-icon" data-lucide="target"></i><span>Mine tips</span></button>
+          <button class="nav-item" data-view="leaderboards"><i class="nav-icon" data-lucide="trophy"></i><span>Poengtavler</span></button>
+          <button class="nav-item" data-view="leagues"><i class="nav-icon" data-lucide="users"></i><span>Ligaer</span></button>
+          <button class="nav-item admin-only hidden" data-view="admin"><i class="nav-icon" data-lucide="settings"></i><span>Admin</span></button>
         </nav>
 
         <section class="login-panel" id="loginPanel">
@@ -57,62 +58,45 @@
             <h2 id="viewTitle">Oversikt</h2>
           </div>
           <div class="status-strip">
-            <span>Full VM: ikke låst</span>
-            <span>Daglig: frist 12:00</span>
-            <span id="connectionStatus">Demo-modus</span>
+            <span id="saveStatus">Tips ikke lastet</span>
           </div>
         </header>
 
         <section class="view active" id="overview">
           <div class="hero-band">
-            <div>
+            <div class="hero-copy">
               <p class="eyebrow">VM FEBER</p>
-              <h3>To konkurranser, en hovedtabell, og private ligaer med kode.</h3>
-              <p>
-                Full VM-konkurranse låses 2 timer før første kamp. Daglig tipping låses kl. 12:00 norsk tid for dagens kamper.
-              </p>
-            </div>
-            <div class="fixture-card" aria-label="Neste frister">
-              <div class="fixture-row">
-                <span>Full VM</span>
-                <strong>15. juni · 19:00</strong>
-              </div>
-              <div class="fixture-row">
-                <span>Dagens tips</span>
-                <strong>12:00</strong>
-              </div>
-              <div class="fixture-row">
-                <span>Synlighet</span>
-                <strong>Kun egne ligaer</strong>
-              </div>
+              <h3>Hele Norge tipper. Du skal bare slå vennene dine.</h3>
+              <p id="heroDeadline">Neste frist lastes...</p>
+              <button class="hero-action" id="continueTipsButton">Fortsett tippingen</button>
             </div>
           </div>
 
           <div class="metric-grid">
             <article class="metric">
-              <span class="metric-value">2</span>
-              <span class="metric-label">konkurranseformer</span>
+              <span class="metric-value" id="fullProgressValue">0/104</span>
+              <span class="metric-label">Full VM levert</span>
             </article>
             <article class="metric">
-              <span class="metric-value">4</span>
-              <span class="metric-label">private ligaer i demo</span>
+              <span class="metric-value" id="dailyProgressValue">0/0</span>
+              <span class="metric-label">Neste kampdag levert</span>
             </article>
             <article class="metric">
-              <span class="metric-value">8</span>
-              <span class="metric-label">bonusspørsmål klare</span>
+              <span class="metric-value" id="nextNorwayValue">–</span>
+              <span class="metric-label" id="nextNorwayLabel">Neste Norge-kamp</span>
             </article>
           </div>
 
           <div class="section-grid">
             <section>
               <div class="section-heading">
-                <h3>Konkurranser</h3>
+                <h3>Neste norske kamp</h3>
               </div>
-              <div class="mode-list" id="modeList"></div>
+              <div class="norway-next" id="norwayNext"></div>
             </section>
             <section>
               <div class="section-heading">
-                <h3>Poengregler</h3>
+                <h3>Slik får du poeng</h3>
               </div>
               <div class="rules-list" id="rulesList"></div>
             </section>
@@ -130,6 +114,13 @@
           <p class="prediction-feedback" id="predictionFeedback">
             Logg inn for å lagre tipsene dine.
           </p>
+          <div class="prediction-toolbar">
+            <div>
+              <strong id="predictionProgress">0 av 0 kamper tippet</strong>
+              <span id="predictionDeadline">Frist lastes...</span>
+            </div>
+            <button id="saveVisibleButton">Lagre synlige tips</button>
+          </div>
           <div class="match-list" id="matchList"></div>
           <div class="bonus-panel" id="bonusPanel"></div>
           <p class="data-credit">Kampdata levert av football-data.org</p>
