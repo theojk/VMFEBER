@@ -94,17 +94,36 @@ async function loadMatches() {
 
 async function syncWorldCupMatches() {
   const feedback = document.querySelector("#syncFeedback");
+  const button = document.querySelector("#syncMatchesButton");
   feedback.textContent = "Synkroniserer kampdata...";
+  button.disabled = true;
 
-  const { data, error } = await window.vmFeberSupabase.functions.invoke("sync-world-cup");
-  if (error || data?.error) {
-    feedback.textContent = `Synkronisering feilet: ${data?.error || error.message}`;
-    return;
+  try {
+    const { data, error } = await window.vmFeberSupabase.functions.invoke("sync-world-cup");
+    if (error || data?.error) {
+      let message = data?.error || error.message;
+
+      if (error?.context) {
+        try {
+          const details = await error.context.json();
+          message = details?.error || details?.message || message;
+        } catch {
+          // Behold den generelle Supabase-feilmeldingen dersom svaret ikke er JSON.
+        }
+      }
+
+      feedback.textContent = `Synkronisering feilet: ${message}`;
+      return;
+    }
+
+    await loadMatches();
+    renderMatches();
+    feedback.textContent = `${data.synced} kamper ble synkronisert.`;
+  } catch (error) {
+    feedback.textContent = `Synkronisering feilet: ${error.message || String(error)}`;
+  } finally {
+    button.disabled = false;
   }
-
-  await loadMatches();
-  renderMatches();
-  feedback.textContent = `${data.synced} kamper ble synkronisert.`;
 }
 
 const leagues = [
