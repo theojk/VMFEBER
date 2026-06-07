@@ -96,6 +96,11 @@ brukere til a endre eget brukernavn, uten tilgang til adminflagget.
 Kjor `supabase-profile-repair.sql` for a reparere Auth-brukere som mangler
 profil, og for automatisk profilopprettelse ved fremtidige registreringer.
 
+Kjor `supabase-admin-users-setup.sql` for ekte invitasjonskoder og en
+adminbeskyttet oversikt over registrerte brukere. Filen validerer
+invitasjonskoder, teller registreringer og begrenser lesing av e-postadresser
+til brukeren selv og admin.
+
 ## Ligaer og poengtavler
 
 Kjor `supabase-leagues-setup.sql` i SQL Editor. Den aktiverer:

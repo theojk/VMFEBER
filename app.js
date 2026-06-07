@@ -9,6 +9,8 @@ const state = {
   competitionIds: {},
   predictions: {},
   backups: [],
+  adminInvitations: [],
+  adminUsers: [],
   isAdmin: false,
   theme: localStorage.getItem("vmFeberTheme") || "system",
 };
@@ -191,6 +193,28 @@ async function loadBackups() {
   state.backups = data || [];
 }
 
+async function loadAdminData() {
+  if (!state.supabaseReady || !state.sessionUserId || !state.isAdmin) {
+    state.adminInvitations = [];
+    state.adminUsers = [];
+    return;
+  }
+
+  const [{ data: invitations, error: invitationError }, { data: users, error: userError }] =
+    await Promise.all([
+      window.vmFeberSupabase.rpc("get_admin_invitations"),
+      window.vmFeberSupabase.rpc("get_admin_users"),
+    ]);
+
+  state.adminInvitations = invitationError ? [] : invitations || [];
+  state.adminUsers = userError ? [] : users || [];
+
+  const feedback = document.querySelector("#inviteFeedback");
+  if (invitationError || userError) {
+    feedback.textContent = invitationError?.message || userError?.message || "Kunne ikke laste admindata.";
+  }
+}
+
 async function loadLeagues() {
   if (!state.supabaseReady || !state.sessionUserId) {
     state.leagues = [];
@@ -340,12 +364,6 @@ async function syncWorldCupMatches() {
   }
 }
 
-const invites = [
-  ["OLA-VM", "Sendt til Ola", "3 registrerte"],
-  ["VENNER-26", "Åpen vennelenke", "8 registrerte"],
-  ["TEST-LIGA", "Intern test", "1 registrert"],
-];
-
 const results = [
   ["Norge - Brasil", "Ikke spilt"],
   ["Frankrike - Japan", "Ikke spilt"],
@@ -428,26 +446,7 @@ async function syncSupabaseSession() {
     .eq("id", session.user.id)
     .maybeSingle();
 
-  if (!profile && pendingProfile?.username) {
-    const payload = {
-      id: session.user.id,
-      username: pendingProfile.username,
-      email: session.user.email,
-      invite_code: pendingProfile.inviteCode || null,
-      registration_source: pendingProfile.inviteCode ? "invitation" : "open",
-    };
-
-    const { data: insertedProfile, error } = await window.vmFeberSupabase
-      .from("profiles")
-      .insert(payload)
-      .select("username,email,invite_code,registration_source")
-      .single();
-
-    if (!error) {
-      profile = insertedProfile;
-      localStorage.removeItem("vmFeberPendingProfile");
-    }
-  }
+  if (profile || pendingProfile) localStorage.removeItem("vmFeberPendingProfile");
 
   state.user = {
     email: profile?.email || session.user.email,
@@ -459,6 +458,16 @@ async function syncSupabaseSession() {
 }
 
 async function sendMagicLink(email, username, inviteCode) {
+  if (inviteCode) {
+    const { data: isValid, error: validationError } = await window.vmFeberSupabase
+      .rpc("validate_invitation_code", { check_code: inviteCode });
+    if (validationError || !isValid) {
+      document.querySelector("#loginFeedback").textContent =
+        validationError?.message || "Invitasjonskoden finnes ikke eller er brukt opp.";
+      return false;
+    }
+  }
+
   localStorage.setItem("vmFeberPendingProfile", JSON.stringify({ username, inviteCode }));
 
   const redirectTo = window.location.href.split("#")[0].split("?")[0];
@@ -725,9 +734,18 @@ async function renderLeaderboard() {
 }
 
 function renderAdmin() {
-  document.querySelector("#inviteList").innerHTML = invites
-    .map(([code, label, count]) => `<div class="invite-row"><strong>${code}</strong><span>${label}</span><span>${count}</span></div>`)
-    .join("");
+  document.querySelector("#inviteList").innerHTML = state.adminInvitations.length
+    ? state.adminInvitations
+      .map((invite) => `
+        <div class="invite-row">
+          <strong>${escapeHtml(invite.code)}</strong>
+          <span>${escapeHtml(invite.label)}</span>
+          <span>${invite.use_count}${invite.max_uses ? `/${invite.max_uses}` : ""} registrerte</span>
+          <button data-copy-invite="${escapeHtml(invite.code)}">Kopier</button>
+        </div>
+      `)
+      .join("")
+    : '<p class="muted">Ingen invitasjonskoder er laget ennå.</p>';
 
   document.querySelector("#resultList").innerHTML = results
     .map(([match, status]) => `<div class="result-row"><strong>${match}</strong><span>${status}</span></div>`)
@@ -745,6 +763,49 @@ function renderAdmin() {
       `)
       .join("")
     : '<p class="muted">Ingen backuper er laget ennå.</p>';
+
+  document.querySelector("#adminUserSummary").textContent =
+    `${state.adminUsers.length} registrerte brukere · ${state.adminUsers.filter((user) => user.registration_source === "invitation").length} via invitasjon`;
+  document.querySelector("#adminUserList").innerHTML = state.adminUsers.length
+    ? state.adminUsers
+      .map((user) => `
+        <div class="admin-user-row">
+          <strong>${escapeHtml(user.username)}</strong>
+          <span>${escapeHtml(user.email)}</span>
+          <span>${formatKickoff(user.created_at)}</span>
+          <span class="admin-user-meta">
+            ${user.invite_code ? `Invitasjon ${escapeHtml(user.invite_code)}` : "Åpen registrering"}
+            · Full VM: ${user.full_prediction_count} tips
+            · Daglig: ${user.daily_prediction_count} tips
+            · Ligaer: ${user.league_names.length ? user.league_names.map(escapeHtml).join(", ") : "ingen"}
+          </span>
+        </div>
+      `)
+      .join("")
+    : '<p class="muted">Ingen registrerte brukere funnet.</p>';
+}
+
+async function createInvitation() {
+  const labelInput = document.querySelector("#newInviteLabel");
+  const maxUsesInput = document.querySelector("#newInviteMaxUses");
+  const feedback = document.querySelector("#inviteFeedback");
+  const maxUses = maxUsesInput.value ? Number(maxUsesInput.value) : null;
+
+  const { data, error } = await window.vmFeberSupabase.rpc("create_invitation", {
+    invitation_label: labelInput.value.trim(),
+    invitation_max_uses: maxUses,
+  });
+
+  if (error) {
+    feedback.textContent = error.message;
+    return;
+  }
+
+  feedback.textContent = `Invitasjonskoden ${data.code} er opprettet.`;
+  labelInput.value = "";
+  maxUsesInput.value = "";
+  await loadAdminData();
+  renderAdmin();
 }
 
 function renderUser() {
@@ -867,6 +928,16 @@ async function copyLeagueCode(code) {
   }
 }
 
+async function copyInvitationCode(code) {
+  const feedback = document.querySelector("#inviteFeedback");
+  try {
+    await navigator.clipboard.writeText(code);
+    feedback.textContent = `Invitasjonskoden ${code} er kopiert.`;
+  } catch {
+    feedback.textContent = `Invitasjonskode: ${code}`;
+  }
+}
+
 function bindEvents() {
   document.querySelector("#mobileMenuButton").addEventListener("click", () => setMobileMenu(true));
   document.querySelector("#mobileMenuClose").addEventListener("click", closeMobileMenu);
@@ -909,6 +980,8 @@ function bindEvents() {
     state.leagues = [];
     state.publicLeagues = [];
     state.leaderboardRows = [];
+    state.adminInvitations = [];
+    state.adminUsers = [];
     state.isAdmin = false;
     save();
     if (state.supabaseReady) {
@@ -922,6 +995,11 @@ function bindEvents() {
   document.querySelector("#logoutButton").addEventListener("click", logout);
   document.querySelector("#settingsLogoutButton").addEventListener("click", logout);
   document.querySelector("#saveProfileButton").addEventListener("click", saveProfileSettings);
+  document.querySelector("#createInviteButton").addEventListener("click", createInvitation);
+  document.querySelector("#inviteList").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-copy-invite]");
+    if (button) copyInvitationCode(button.dataset.copyInvite);
+  });
 
   document.querySelector("#defaultCompetition").addEventListener("change", (event) => {
     state.predictionMode = event.target.value;
@@ -1004,6 +1082,7 @@ async function init() {
   await loadPredictions();
   await loadBackups();
   await loadLeagues();
+  await loadAdminData();
   renderModes();
   renderRules();
   renderMatches();

@@ -159,21 +159,10 @@ alter table public.match_predictions enable row level security;
 alter table public.bonus_questions enable row level security;
 alter table public.bonus_predictions enable row level security;
 
-create policy "Profiles are readable by signed in users"
+create policy "Users and admins can read profiles"
   on public.profiles for select
   to authenticated
-  using (true);
-
-create policy "Users can insert their own profile"
-  on public.profiles for insert
-  to authenticated
-  with check (auth.uid() = id);
-
-create policy "Users can update their own profile"
-  on public.profiles for update
-  to authenticated
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
+  using (id = auth.uid() or public.is_admin());
 
 create policy "Admins can read invitations"
   on public.invitations for select

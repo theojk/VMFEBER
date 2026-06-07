@@ -2,7 +2,7 @@
 
 ## Administrasjon og brukere
 
-- [ ] Lag en adminoversikt over alle registrerte brukere.
+- [x] Lag en adminoversikt over alle registrerte brukere.
   - Vis brukernavn, e-post, registreringsdato og registreringskilde/invitasjonskode.
   - Vis hvilke ligaer brukeren er medlem av.
   - Vis antall lagrede tips i Full VM og Daglig.

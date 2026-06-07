@@ -40,9 +40,18 @@ as $$
 declare
   requested_username text;
   requested_invite_code text;
+  accepted_invite_code text;
 begin
   requested_username := new.raw_user_meta_data ->> 'username';
-  requested_invite_code := new.raw_user_meta_data ->> 'invite_code';
+  requested_invite_code := nullif(trim(new.raw_user_meta_data ->> 'invite_code'), '');
+
+  if requested_invite_code is not null then
+    update public.invitations
+    set use_count = use_count + 1
+    where lower(code) = lower(requested_invite_code)
+      and (max_uses is null or use_count < max_uses)
+    returning code into accepted_invite_code;
+  end if;
 
   insert into public.profiles (
     id,
@@ -55,8 +64,8 @@ begin
     new.id,
     public.profile_username_for_user(new.id, new.email, requested_username),
     new.email,
-    nullif(requested_invite_code, ''),
-    case when nullif(requested_invite_code, '') is null then 'open' else 'invitation' end
+    accepted_invite_code,
+    case when accepted_invite_code is null then 'open' else 'invitation' end
   )
   on conflict (id) do nothing;
 

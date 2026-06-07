@@ -226,6 +226,12 @@
               <section class="admin-panel">
               <h4>Invitasjoner</h4>
               <p class="muted">Lag invitasjonskoder slik at du ser hvem som kom via deg, og hvem som registrerte seg åpent.</p>
+              <label for="newInviteLabel">Beskrivelse</label>
+              <input id="newInviteLabel" placeholder="For eksempel Fotballgjengen" />
+              <label for="newInviteMaxUses">Maks antall brukere</label>
+              <input id="newInviteMaxUses" type="number" min="1" placeholder="Ubegrenset" />
+              <button id="createInviteButton">Lag invitasjonskode</button>
+              <p class="microcopy" id="inviteFeedback"></p>
               <div class="invite-list" id="inviteList"></div>
               </section>
               <section class="admin-panel">
@@ -239,6 +245,11 @@
               <h4>Tips-backuper</h4>
               <p class="muted">Uforanderlige snapshots som opprettes automatisk ved fristene.</p>
               <div class="backup-list" id="backupList"></div>
+              </section>
+              <section class="admin-panel admin-users-panel">
+              <h4>Registrerte brukere</h4>
+              <p class="muted" id="adminUserSummary">Brukeroversikten lastes...</p>
+              <div class="admin-user-list" id="adminUserList"></div>
               </section>
             </div>
           </div>
