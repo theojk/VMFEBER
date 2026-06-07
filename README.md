@@ -16,6 +16,7 @@ Se [TODO.md](TODO.md) for planlagte forbedringer og undersokte integrasjoner.
 - Autooppdaterte projiserte tabeller for alle 12 VM-grupper og tredjeplasser
 - Valgfri flytende live-tabell på desktop som følger kampen brukeren tipper på
 - Rundeetiketter på kampene og projisert sluttspill med kvalifiseringsvei
+- Sluttspilltips med ekstraomganger og straffespark ved uavgjort
 - Enkel adminskisse for invitasjoner og resultater
 
 ## Neste naturlige steg

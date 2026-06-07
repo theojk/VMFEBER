@@ -142,8 +142,9 @@ async function loadMatches() {
 
   if (error || !data?.length) return;
 
-  matches = data.map((match) => ({
+  matches = data.map((match, index) => ({
     id: match.id,
+    number: index + 1,
     home: match.home_team,
     away: match.away_team,
     stage: match.stage,
@@ -176,7 +177,7 @@ async function loadPredictions() {
 
   const { data: predictionRows } = await window.vmFeberSupabase
     .from("match_predictions")
-    .select("competition_id,match_id,home_score,away_score,source,updated_at");
+    .select("competition_id,match_id,home_score,away_score,extra_time_home_score,extra_time_away_score,penalty_home_score,penalty_away_score,source,updated_at");
 
   state.predictions = Object.fromEntries(
     (predictionRows || []).map((prediction) => [
@@ -286,11 +287,27 @@ async function savePrediction(matchId) {
   const row = document.querySelector(`[data-match-id="${matchId}"]`);
   const homeScore = row.querySelector('[data-score="home"]').value;
   const awayScore = row.querySelector('[data-score="away"]').value;
+  const extraHomeScore = row.querySelector('[data-extra-score="home"]')?.value ?? "";
+  const extraAwayScore = row.querySelector('[data-extra-score="away"]')?.value ?? "";
+  const penaltyHomeScore = row.querySelector('[data-penalty-score="home"]')?.value ?? "";
+  const penaltyAwayScore = row.querySelector('[data-penalty-score="away"]')?.value ?? "";
   const button = row.querySelector(".save-prediction");
 
   if (homeScore === "" || awayScore === "") {
     setPredictionFeedback("Fyll inn både hjemme- og bortemål.", "error");
     return false;
+  }
+
+  if (row.querySelector("[data-tiebreak]") && Number(homeScore) === Number(awayScore)) {
+    if (extraHomeScore === "" || extraAwayScore === "") {
+      setPredictionFeedback("Uavgjort sluttspilltips må avgjøres etter ekstraomganger.", "error");
+      return false;
+    }
+    if (Number(extraHomeScore) === Number(extraAwayScore)
+      && (penaltyHomeScore === "" || penaltyAwayScore === "" || Number(penaltyHomeScore) === Number(penaltyAwayScore))) {
+      setPredictionFeedback("Velg en vinner med et ulikt straffesparkresultat.", "error");
+      return false;
+    }
   }
 
   button.disabled = true;
@@ -301,6 +318,10 @@ async function savePrediction(matchId) {
     selected_match_id: matchId,
     predicted_home_score: Number(homeScore),
     predicted_away_score: Number(awayScore),
+    predicted_extra_time_home_score: extraHomeScore === "" ? null : Number(extraHomeScore),
+    predicted_extra_time_away_score: extraAwayScore === "" ? null : Number(extraAwayScore),
+    predicted_penalty_home_score: penaltyHomeScore === "" ? null : Number(penaltyHomeScore),
+    predicted_penalty_away_score: penaltyAwayScore === "" ? null : Number(penaltyAwayScore),
   });
 
   if (error) {
@@ -368,8 +389,22 @@ function randomizeVisiblePredictions() {
   }
 
   rows.forEach((row) => {
-    row.querySelector('[data-score="home"]').value = randomScore();
-    row.querySelector('[data-score="away"]').value = randomScore();
+    const home = randomScore();
+    const away = randomScore();
+    row.querySelector('[data-score="home"]').value = home;
+    row.querySelector('[data-score="away"]').value = away;
+    if (row.querySelector("[data-tiebreak]") && home === away) {
+      const extraHome = randomScore();
+      const extraAway = randomScore();
+      row.querySelector('[data-extra-score="home"]').value = extraHome;
+      row.querySelector('[data-extra-score="away"]').value = extraAway;
+      if (extraHome === extraAway) {
+        const penaltyHome = Math.floor(Math.random() * 5) + 3;
+        row.querySelector('[data-penalty-score="home"]').value = penaltyHome;
+        row.querySelector('[data-penalty-score="away"]').value = Math.max(0, penaltyHome + (Math.random() < 0.5 ? -1 : 1));
+      }
+      updateKnockoutTiebreakVisibility(row);
+    }
     row.querySelector(".save-prediction").textContent = "Lagre";
   });
   renderProjectedGroupTables();
@@ -635,6 +670,9 @@ function updatePredictionToolbar() {
 }
 
 function renderMatches() {
+  const projectedKnockoutMatchups = state.predictionMode === "full"
+    ? buildProjectedKnockoutMatchups()
+    : new Map();
   const extra =
     state.predictionMode === "full"
       ? `
@@ -657,18 +695,22 @@ function renderMatches() {
         const heading = day !== lastDay ? `<div class="match-day">${match.date.split(" kl.")[0]}</div>` : "";
         lastDay = day;
         const prediction = activePrediction(match.id);
+        const projectedMatchup = projectedKnockoutMatchups.get(match.number);
+        const home = projectedMatchup?.home || { name: match.home, crest: match.homeCrest, origin: "" };
+        const away = projectedMatchup?.away || { name: match.away, crest: match.awayCrest, origin: "" };
         return `${heading}
-        <article class="match-row" data-match-id="${match.id}">
-          <div class="team">${match.homeCrest ? `<img class="flag" src="${match.homeCrest}" alt="" />` : `<span class="flag" style="background:${match.homeColor}"></span>`}${match.home}</div>
+        <article class="match-row" data-match-id="${match.id}" data-match-number="${match.number || ""}">
+          <div class="team" data-projected-team="home">${home.crest ? `<img class="flag" src="${home.crest}" alt="" />` : `<span class="flag" style="background:${match.homeColor}"></span>`}<span class="team-details"><strong>${escapeHtml(home.name)}</strong>${home.origin ? `<small>${escapeHtml(home.origin)}</small>` : ""}</span></div>
           <div class="score-inputs">
             <input type="number" min="0" data-score="home" value="${prediction?.home_score ?? ""}" aria-label="${match.home} mål" />
             <input type="number" min="0" data-score="away" value="${prediction?.away_score ?? ""}" aria-label="${match.away} mål" />
           </div>
-          <div class="team">${match.awayCrest ? `<img class="flag" src="${match.awayCrest}" alt="" />` : `<span class="flag" style="background:${match.awayColor}"></span>`}${match.away}</div>
+          <div class="team" data-projected-team="away">${away.crest ? `<img class="flag" src="${away.crest}" alt="" />` : `<span class="flag" style="background:${match.awayColor}"></span>`}<span class="team-details"><strong>${escapeHtml(away.name)}</strong>${away.origin ? `<small>${escapeHtml(away.origin)}</small>` : ""}</span></div>
           <div class="deadline"><span class="match-stage-label">${escapeHtml(stageLabel(match))}</span><br />${match.date}<br />${match.deadline}</div>
           <button class="save-prediction" data-save-prediction="${match.id}" ${state.sessionUserId ? "" : "disabled"}>
             ${prediction?.inheritedFromFull ? "Bruk Full VM" : prediction ? "Lagret" : "Lagre"}
           </button>
+          ${knockoutTiebreakFields(match, prediction)}
         </article>
       `;
       },
@@ -676,6 +718,7 @@ function renderMatches() {
     .join("");
 
   document.querySelector("#bonusPanel").innerHTML = extra;
+  document.querySelectorAll("#matchList [data-match-id]").forEach(updateKnockoutTiebreakVisibility);
   updatePredictionToolbar();
   renderProjectedGroupTables();
 }
@@ -709,6 +752,45 @@ function stageLabel(match) {
   }[match.stage] || String(match.stage || "Kamp").replaceAll("_", " ");
 }
 
+function isKnockoutMatch(match) {
+  return Boolean(match.stage && match.stage !== "GROUP_STAGE");
+}
+
+function knockoutTiebreakFields(match, prediction) {
+  if (!isKnockoutMatch(match)) return "";
+  return `
+    <div class="knockout-tiebreak hidden" data-tiebreak>
+      <span>Etter ekstraomganger</span>
+      <div class="score-inputs">
+        <input type="number" min="0" data-extra-score="home" value="${prediction?.extra_time_home_score ?? ""}" aria-label="Hjemmelag etter ekstraomganger" />
+        <input type="number" min="0" data-extra-score="away" value="${prediction?.extra_time_away_score ?? ""}" aria-label="Bortelag etter ekstraomganger" />
+      </div>
+      <div class="penalty-tiebreak hidden" data-penalty-tiebreak>
+        <span>Etter straffespark</span>
+        <div class="score-inputs">
+          <input type="number" min="0" data-penalty-score="home" value="${prediction?.penalty_home_score ?? ""}" aria-label="Hjemmelag straffespark" />
+          <input type="number" min="0" data-penalty-score="away" value="${prediction?.penalty_away_score ?? ""}" aria-label="Bortelag straffespark" />
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function updateKnockoutTiebreakVisibility(row) {
+  const tiebreak = row.querySelector("[data-tiebreak]");
+  if (!tiebreak) return;
+  const home = row.querySelector('[data-score="home"]').value;
+  const away = row.querySelector('[data-score="away"]').value;
+  const regularTie = home !== "" && away !== "" && Number(home) === Number(away);
+  tiebreak.classList.toggle("hidden", !regularTie);
+
+  const penalty = row.querySelector("[data-penalty-tiebreak]");
+  const extraHome = row.querySelector('[data-extra-score="home"]').value;
+  const extraAway = row.querySelector('[data-extra-score="away"]').value;
+  const extraTie = regularTie && extraHome !== "" && extraAway !== "" && Number(extraHome) === Number(extraAway);
+  penalty.classList.toggle("hidden", !extraTie);
+}
+
 function projectedScore(match) {
   const row = document.querySelector(`[data-match-id="${match.id}"]`);
   if (row) {
@@ -719,6 +801,27 @@ function projectedScore(match) {
 
   const prediction = activePrediction(match.id);
   return prediction ? [prediction.home_score, prediction.away_score] : null;
+}
+
+function projectedWinnerSide(match) {
+  const score = projectedScore(match);
+  if (!score) return null;
+  if (score[0] !== score[1]) return score[0] > score[1] ? "home" : "away";
+
+  const row = document.querySelector(`[data-match-id="${match.id}"]`);
+  const prediction = activePrediction(match.id);
+  const extraHome = row?.querySelector('[data-extra-score="home"]')?.value ?? prediction?.extra_time_home_score;
+  const extraAway = row?.querySelector('[data-extra-score="away"]')?.value ?? prediction?.extra_time_away_score;
+  if (extraHome !== "" && extraHome != null && extraAway !== "" && extraAway != null && Number(extraHome) !== Number(extraAway)) {
+    return Number(extraHome) > Number(extraAway) ? "home" : "away";
+  }
+
+  const penaltyHome = row?.querySelector('[data-penalty-score="home"]')?.value ?? prediction?.penalty_home_score;
+  const penaltyAway = row?.querySelector('[data-penalty-score="away"]')?.value ?? prediction?.penalty_away_score;
+  if (penaltyHome !== "" && penaltyHome != null && penaltyAway !== "" && penaltyAway != null && Number(penaltyHome) !== Number(penaltyAway)) {
+    return Number(penaltyHome) > Number(penaltyAway) ? "home" : "away";
+  }
+  return null;
 }
 
 function calculateGroupStandings(groupMatches) {
@@ -868,6 +971,7 @@ function knockoutSlot(origin, standingsByGroup, qualifyingThirds) {
     const team = group?.rows[position];
     return {
       name: team?.played === 3 ? team.name : `Nr. ${position + 1} i gruppe ${groupLetter}`,
+      crest: team?.played === 3 ? team.crest : "",
       origin: `${position + 1}. plass i gruppe ${groupLetter}`,
     };
   }
@@ -877,6 +981,7 @@ function knockoutSlot(origin, standingsByGroup, qualifyingThirds) {
     const candidates = qualifyingThirds.filter((team) => eligibleLetters.includes(team.groupLetter));
     return {
       name: candidates.length ? candidates.map((team) => team.name).join(" / ") : "En av de beste tredjeplassene",
+      crest: candidates.length === 1 ? candidates[0].crest : "",
       origin: `3. plass fra gruppe ${eligibleLetters.join(", ")}`,
     };
   }
@@ -884,25 +989,96 @@ function knockoutSlot(origin, standingsByGroup, qualifyingThirds) {
   const isWinner = origin.startsWith("V");
   return {
     name: `${isWinner ? "Vinner" : "Taper"} av kamp ${origin.slice(1)}`,
+    crest: "",
     origin: "Avgjøres i sluttspillet",
   };
 }
 
-function renderProjectedKnockout(standingsByGroup) {
-  const container = document.querySelector("#projectedKnockout");
-  const qualifyingThirds = standingsByGroup
+function projectedStandingsByGroup() {
+  const groupedMatches = matches.filter((match) => match.groupName);
+  return [...new Set(groupedMatches.map((match) => match.groupName))]
+    .sort((a, b) => groupLabel(a).localeCompare(groupLabel(b), "nb"))
+    .map((groupName) => ({
+      groupName,
+      label: groupLabel(groupName),
+      rows: calculateGroupStandings(groupedMatches.filter((match) => match.groupName === groupName)),
+    }));
+}
+
+function qualifyingProjectedThirds(standingsByGroup) {
+  return standingsByGroup
     .filter((group) => group.rows[2]?.played === 3)
     .map((group) => ({ ...group.rows[2], groupLetter: group.label.slice(-1) }))
     .sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor)
     .slice(0, 8);
+}
+
+function buildProjectedKnockoutMatchups(standingsByGroup = projectedStandingsByGroup()) {
+  const qualifyingThirds = qualifyingProjectedThirds(standingsByGroup);
+  const matchups = new Map();
+
+  const resolveOrigin = (origin) => {
+    if (!/^[VT]\d+$/.test(origin)) {
+      return knockoutSlot(origin, standingsByGroup, qualifyingThirds);
+    }
+
+    const sourceNumber = Number(origin.slice(1));
+    const sourceMatchup = matchups.get(sourceNumber);
+    const sourceMatch = matches.find((match) => match.number === sourceNumber);
+    const winnerSide = sourceMatch ? projectedWinnerSide(sourceMatch) : null;
+    if (!sourceMatchup || !winnerSide) {
+      return knockoutSlot(origin, standingsByGroup, qualifyingThirds);
+    }
+
+    const selectedSide = origin.startsWith("V")
+      ? winnerSide
+      : winnerSide === "home" ? "away" : "home";
+    const selected = sourceMatchup[selectedSide];
+    return {
+      ...selected,
+      origin: `${origin.startsWith("V") ? "Vinner" : "Taper"} av kamp ${sourceNumber} · ${selected.origin}`,
+    };
+  };
+
+  knockoutRounds.forEach((round) => {
+    round.matches.forEach(([number, homeOrigin, awayOrigin]) => {
+      matchups.set(number, {
+        home: resolveOrigin(homeOrigin),
+        away: resolveOrigin(awayOrigin),
+      });
+    });
+  });
+
+  return matchups;
+}
+
+function updateProjectedKnockoutMatchCards(standingsByGroup) {
+  if (state.predictionMode !== "full") return;
+  const matchups = buildProjectedKnockoutMatchups(standingsByGroup);
+
+  matchups.forEach((matchup, number) => {
+    const row = document.querySelector(`[data-match-number="${number}"]`);
+    if (!row) return;
+
+    ["home", "away"].forEach((side) => {
+      const teamElement = row.querySelector(`[data-projected-team="${side}"]`);
+      const details = teamElement?.querySelector(".team-details");
+      if (!details) return;
+      details.innerHTML = `<strong>${escapeHtml(matchup[side].name)}</strong><small>${escapeHtml(matchup[side].origin)}</small>`;
+    });
+  });
+}
+
+function renderProjectedKnockout(standingsByGroup) {
+  const container = document.querySelector("#projectedKnockout");
+  const matchups = buildProjectedKnockoutMatchups(standingsByGroup);
 
   container.innerHTML = knockoutRounds.map((round) => `
     <section class="knockout-round">
       <h3>${round.title}</h3>
       <div class="knockout-grid">
         ${round.matches.map(([number, homeOrigin, awayOrigin]) => {
-          const home = knockoutSlot(homeOrigin, standingsByGroup, qualifyingThirds);
-          const away = knockoutSlot(awayOrigin, standingsByGroup, qualifyingThirds);
+          const { home, away } = matchups.get(number);
           return `
             <article class="knockout-match">
               <span>Kamp ${number}</span>
@@ -964,6 +1140,7 @@ function renderProjectedGroupTables() {
     <p class="standings-note">Grønn markering: foreløpig videre. Gruppene bruker innbyrdes oppgjør før samlet målforskjell og scorede mål. Fair play og FIFA-ranking kan ikke beregnes fra tipsene.</p>
   `;
   renderProjectedKnockout(standingsByGroup);
+  updateProjectedKnockoutMatchCards(standingsByGroup);
   renderLiveGroupPanel();
 }
 
@@ -1515,8 +1692,9 @@ function bindEvents() {
   });
 
   document.querySelector("#matchList").addEventListener("input", (event) => {
-    if (!event.target.matches("[data-score]")) return;
+    if (!event.target.matches("[data-score], [data-extra-score], [data-penalty-score]")) return;
     const row = event.target.closest("[data-match-id]");
+    updateKnockoutTiebreakVisibility(row);
     showLiveGroupForMatchRow(row);
     row.querySelector(".save-prediction").textContent = "Lagre";
     setPredictionFeedback("Du har ulagrede endringer.");

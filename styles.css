@@ -6,8 +6,13 @@
   --line: #dce3dc;
   --green: #16734a;
   --red: #ba0c2f;
+  --danger-fill: #ba0c2f;
   --gold: #c9992c;
   --blue: #00205b;
+  --primary-fill: #00205b;
+  --soft-surface: #e9efe7;
+  --soft-text: #2b4938;
+  --subtle-surface: #f8faf7;
   --shadow: 0 18px 50px rgba(32, 48, 39, 0.12);
 }
 
@@ -17,6 +22,15 @@ html[data-theme="dark"] {
   --ink: #f3f6f8;
   --muted: #a9b4bd;
   --line: #303946;
+  --green: #62d39a;
+  --red: #ff6b85;
+  --danger-fill: #b80f36;
+  --gold: #e8bd5c;
+  --blue: #76adff;
+  --primary-fill: #0b438f;
+  --soft-surface: #26372f;
+  --soft-text: #d8f1e2;
+  --subtle-surface: #202a35;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
   color-scheme: dark;
 }
@@ -83,7 +97,7 @@ button {
   width: 54px;
   height: 54px;
   border-radius: 8px;
-  background: var(--red);
+  background: var(--danger-fill);
   box-shadow: inset 0 -12px 0 var(--blue);
   color: white;
   font-weight: 900;
@@ -153,8 +167,8 @@ h4 {
 
 .nav-item.active,
 .segment.active {
-  background: var(--blue);
-  border-color: var(--blue);
+  background: var(--primary-fill);
+  border-color: var(--primary-fill);
   color: white;
 }
 
@@ -198,7 +212,7 @@ h4 {
   border: 1px solid var(--blue);
   border-radius: 8px;
   padding: 0 14px;
-  background: var(--blue);
+  background: var(--primary-fill);
   color: white;
   font-weight: 800;
 }
@@ -421,8 +435,8 @@ select {
   min-height: 32px;
   border-radius: 8px;
   padding: 0 10px;
-  background: #e9efe7;
-  color: #2b4938;
+  background: var(--soft-surface);
+  color: var(--soft-text);
   font-size: 0.84rem;
   font-weight: 800;
 }
@@ -483,7 +497,7 @@ select {
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 0 16px;
-  background: var(--red);
+  background: var(--danger-fill);
   color: white;
   font-weight: 850;
 }
@@ -736,8 +750,8 @@ select {
   margin-bottom: 5px;
   border-radius: 6px;
   padding: 0 7px;
-  background: #e9efe7;
-  color: #2b4938;
+  background: var(--soft-surface);
+  color: var(--soft-text);
   font-size: 0.72rem;
   font-weight: 850;
 }
@@ -816,7 +830,7 @@ select {
   border: 1px solid var(--line);
   border-left: 5px solid var(--red);
   border-radius: 8px;
-  background: white;
+  background: var(--panel);
 }
 
 .norway-match .team:last-child {
@@ -872,8 +886,8 @@ select {
 }
 
 .admin-panel .danger-button {
-  border-color: var(--red);
-  background: var(--red);
+  border-color: var(--danger-fill);
+  background: var(--danger-fill);
 }
 
 .backup-row {
@@ -1018,6 +1032,23 @@ select {
   font-weight: 850;
 }
 
+.team-details {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.team-details strong {
+  overflow-wrap: anywhere;
+}
+
+.team-details small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
 .flag {
   display: inline-block;
   width: 26px;
@@ -1043,11 +1074,39 @@ img.flag {
   font-weight: 850;
 }
 
+.knockout-tiebreak {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--subtle-surface);
+}
+
+.knockout-tiebreak > span,
+.penalty-tiebreak > span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.knockout-tiebreak .score-inputs {
+  width: 150px;
+}
+
+.penalty-tiebreak {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 10px;
+}
+
 .save-prediction {
   min-height: 40px;
   border: 1px solid var(--ink);
   border-radius: 8px;
-  background: var(--blue);
+  background: var(--primary-fill);
   color: white;
   font-weight: 800;
 }
@@ -1113,7 +1172,8 @@ img.flag {
   min-height: 38px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #f8faf7;
+  background: var(--subtle-surface);
+  color: var(--ink);
   font-weight: 800;
 }
 
@@ -1123,7 +1183,7 @@ img.flag {
   border: 1px solid var(--ink);
   border-radius: 8px;
   padding: 0 14px;
-  background: var(--ink);
+  background: var(--primary-fill);
   color: white;
   font-weight: 800;
 }
@@ -1143,7 +1203,7 @@ img.flag {
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  background: #edf2eb;
+  background: var(--soft-surface);
   font-weight: 900;
 }
 
@@ -1367,6 +1427,17 @@ img.flag {
   .match-row > .save-prediction {
     grid-column: 3;
     grid-row: 2;
+  }
+
+  .knockout-tiebreak,
+  .penalty-tiebreak {
+    align-items: stretch;
+    flex-direction: column;
+    margin-left: 0;
+  }
+
+  .knockout-tiebreak .score-inputs {
+    width: 100%;
   }
 
   .team {

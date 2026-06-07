@@ -46,6 +46,9 @@
   - Bytt gruppeplasseringene til projiserte lagnavn og behold kvalifiseringsveien
     når gruppetipsene er komplette.
 
+- [x] Avgjør uavgjorte sluttspilltips med ekstraomganger og eventuelle
+  straffespark, slik at projisert vinner kan føres videre.
+
 - [x] Legg til hurtigvalg: **Jeg stoler på skjebnen**.
   - Fyll automatisk inn resultatet for alle synlige og ulåste kamper.
   - Trekk hjemme- og bortemål uavhengig som tilfeldige heltall mellom 0 og 4.
