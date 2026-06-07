@@ -65,6 +65,12 @@ button {
   backdrop-filter: blur(18px);
 }
 
+.mobile-menu-button,
+.mobile-menu-close,
+.mobile-menu-backdrop {
+  display: none;
+}
+
 .brand-block {
   display: flex;
   align-items: center;
@@ -818,17 +824,70 @@ img.flag {
 
 @media (max-width: 700px) {
   body {
-    padding-bottom: 74px;
+    padding-bottom: 0;
   }
 
-  .main-content,
-  .sidebar {
+  .main-content {
     padding: 18px;
   }
 
   .sidebar {
+    position: fixed;
+    z-index: 50;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    width: min(86vw, 340px);
+    padding: 20px;
+    border-right: 1px solid var(--line);
+    border-bottom: 0;
+    overflow-y: auto;
+    transform: translateX(-105%);
+    transition: transform 180ms ease;
+  }
+
+  body.mobile-menu-open {
+    overflow: hidden;
+  }
+
+  body.mobile-menu-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .mobile-menu-button,
+  .mobile-menu-close {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+  }
+
+  .mobile-menu-button svg,
+  .mobile-menu-close svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .mobile-menu-close {
+    margin-left: auto;
+  }
+
+  .mobile-menu-backdrop {
+    position: fixed;
+    z-index: 40;
+    inset: 0;
+    border: 0;
+    background: rgba(8, 15, 24, 0.58);
+  }
+
+  body.mobile-menu-open .mobile-menu-backdrop {
     display: block;
-    padding-bottom: 14px;
   }
 
   .sidebar .login-panel,
@@ -837,36 +896,20 @@ img.flag {
   }
 
   .nav-list {
-    position: fixed;
-    z-index: 30;
-    right: 0;
-    bottom: 0;
-    left: 0;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0;
-    padding: 6px 8px;
-    border-top: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.97);
-    box-shadow: 0 -8px 24px rgba(23, 32, 27, 0.1);
-    backdrop-filter: blur(16px);
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 0;
   }
 
   .nav-item {
-    justify-content: center;
-    min-width: 0;
-    border: 0;
-    background: transparent;
-    text-align: center;
-    font-size: 0.72rem;
+    justify-content: flex-start;
+    text-align: left;
+    font-size: 0.95rem;
   }
 
   .nav-icon {
-    display: none;
-  }
-
-  .nav-item.admin-only {
-    display: none !important;
+    display: block;
   }
 
   .site-footer {
@@ -882,6 +925,17 @@ img.flag {
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .topbar {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+  }
+
+  .topbar .status-strip {
+    grid-column: 1 / -1;
   }
 
   .leaderboard-filters {

@@ -749,6 +749,16 @@ function setView(viewId) {
   document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === viewId));
   document.querySelector("#viewTitle").textContent = viewTitles[viewId];
+  closeMobileMenu();
+}
+
+function setMobileMenu(open) {
+  document.body.classList.toggle("mobile-menu-open", open);
+  document.querySelector("#mobileMenuButton").setAttribute("aria-expanded", String(open));
+}
+
+function closeMobileMenu() {
+  setMobileMenu(false);
 }
 
 async function joinLeague(code) {
@@ -804,6 +814,13 @@ async function createLeague() {
 }
 
 function bindEvents() {
+  document.querySelector("#mobileMenuButton").addEventListener("click", () => setMobileMenu(true));
+  document.querySelector("#mobileMenuClose").addEventListener("click", closeMobileMenu);
+  document.querySelector("#mobileMenuBackdrop").addEventListener("click", closeMobileMenu);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeMobileMenu();
+  });
+
   document.querySelectorAll(".nav-item").forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.view));
   });
