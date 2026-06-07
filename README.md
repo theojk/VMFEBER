@@ -2,6 +2,8 @@
 
 Første lokale prototype for en norsk VM-tippeside.
 
+Se [TODO.md](TODO.md) for planlagte forbedringer og undersokte integrasjoner.
+
 ## Hva som finnes nå
 
 - Mobilvennlig webapp som kan åpnes direkte i nettleser
@@ -93,6 +95,22 @@ brukere til a endre eget brukernavn, uten tilgang til adminflagget.
 
 Kjor `supabase-profile-repair.sql` for a reparere Auth-brukere som mangler
 profil, og for automatisk profilopprettelse ved fremtidige registreringer.
+
+## Ligaer og poengtavler
+
+Kjor `supabase-leagues-setup.sql` i SQL Editor. Den aktiverer:
+
+- opprettelse av private ligaer med kode
+- innmelding i ligaer med kode
+- Full VM-poengtavle for hver liga
+- daglig poengtavle per kampdato
+- samlet daglig poengtavle gjennom hele VM
+- tilgangskontroll slik at bare ligamedlemmer kan hente poengtavlen
+
+Poengtavlene summerer feltet `points` i lagrede kamptips. Kampresultater ma
+derfor poengberegnes etter synkronisering for at listene skal fa poeng. Den
+oppdaterte Edge Function `sync-world-cup` beregner automatisk 3 poeng for
+eksakt resultat og 1 poeng for riktig kamputfall etter synkronisering.
 
 ## Automatisk backup av alle tips
 

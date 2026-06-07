@@ -138,14 +138,32 @@
             </div>
             <p class="microcopy" id="leagueFeedback">Kun medlemmer kan se poengtavlen i en privat liga.</p>
           </div>
+          <div class="league-join">
+            <label for="newLeagueName">Opprett privat liga</label>
+            <div class="input-row league-create-row">
+              <input id="newLeagueName" placeholder="Liganavn" />
+              <input id="newLeagueCode" placeholder="Valgfri kode" maxlength="12" />
+              <button id="createLeagueButton">Opprett</button>
+            </div>
+            <p class="microcopy" id="createLeagueFeedback">Du blir automatisk eier og medlem.</p>
+          </div>
           <div class="league-grid" id="leagueGrid"></div>
         </section>
 
         <section class="view" id="leaderboards">
           <div class="section-heading">
             <h3>Poengtavler</h3>
-            <select id="leaderboardSelect" aria-label="Velg poengtavle"></select>
+            <div class="leaderboard-filters">
+              <select id="leaderboardSelect" aria-label="Velg liga"></select>
+              <select id="leaderboardModeSelect" aria-label="Velg konkurranse">
+                <option value="full-vm">Full VM totalt</option>
+                <option value="daglig-total">Daglig totalt</option>
+                <option value="daglig-dato">Daglig per dato</option>
+              </select>
+              <input id="leaderboardDate" class="hidden" type="date" aria-label="Velg dato" />
+            </div>
           </div>
+          <p class="microcopy" id="leaderboardFeedback"></p>
           <div class="leaderboard" id="leaderboard"></div>
         </section>
 

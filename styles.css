@@ -289,6 +289,20 @@ label {
   gap: 8px;
 }
 
+.league-create-row input {
+  min-width: 0;
+}
+
+.leaderboard-filters {
+  display: flex;
+  gap: 8px;
+  width: min(100%, 620px);
+}
+
+.leaderboard-filters > * {
+  min-width: 0;
+}
+
 input,
 select {
   width: 100%;
@@ -868,6 +882,11 @@ img.flag {
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .leaderboard-filters {
+    display: grid;
+    width: 100%;
   }
 
 

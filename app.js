@@ -1,6 +1,7 @@
 const state = {
   user: JSON.parse(localStorage.getItem("vmFeberUser") || "null"),
-  leagues: JSON.parse(localStorage.getItem("vmFeberLeagues") || '["total","kollektiv"]'),
+  leagues: [],
+  leaderboardRows: [],
   predictionMode: "daily",
   supabaseReady: Boolean(window.vmFeberSupabaseReady),
   sessionUserId: null,
@@ -73,6 +74,15 @@ function formatKickoff(kickoffAt) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(kickoffAt));
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function osloDateKey(date) {
@@ -178,6 +188,25 @@ async function loadBackups() {
     .limit(30);
 
   state.backups = data || [];
+}
+
+async function loadLeagues() {
+  if (!state.supabaseReady || !state.sessionUserId) {
+    state.leagues = [];
+    return;
+  }
+
+  const { data, error } = await window.vmFeberSupabase.rpc("get_my_leagues");
+  if (error) {
+    state.leagues = [];
+    document.querySelector("#leagueFeedback").textContent =
+      error.message.includes("get_my_leagues")
+        ? "Ligasystemet må aktiveres i Supabase."
+        : error.message;
+    return;
+  }
+
+  state.leagues = data || [];
 }
 
 function activeCompetitionSlug() {
@@ -304,35 +333,6 @@ async function syncWorldCupMatches() {
   }
 }
 
-const leagues = [
-  { id: "total", name: "Hovedkonkurranse", code: "ALL", members: 48, open: true },
-  { id: "kollektiv", name: "Kollektivet", code: "FEBER24", members: 7, open: true },
-  { id: "jobb", name: "Jobbliga", code: "KAFFE", members: 12, open: false },
-  { id: "familie", name: "Familie", code: "SØNDAG", members: 9, open: false },
-];
-
-const leaderboardData = {
-  total: [
-    ["Tippemester", "Åpen registrering", 42],
-    ["Nordlys", "Invitasjon: Ola", 39],
-    ["SisteMinutt", "Åpen registrering", 35],
-    ["VMKongen", "Invitasjon: deg", 33],
-  ],
-  kollektiv: [
-    ["Nordlys", "Kollektivet", 39],
-    ["VMKongen", "Kollektivet", 33],
-    ["SisteMinutt", "Kollektivet", 31],
-  ],
-  jobb: [
-    ["Kaffe først", "Jobbliga", 28],
-    ["ExcelFarvel", "Jobbliga", 25],
-  ],
-  familie: [
-    ["Onkel Offside", "Familie", 31],
-    ["Finalemor", "Familie", 30],
-  ],
-};
-
 const invites = [
   ["OLA-VM", "Sendt til Ola", "3 registrerte"],
   ["VENNER-26", "Åpen vennelenke", "8 registrerte"],
@@ -355,7 +355,6 @@ const viewTitles = {
 
 function save() {
   localStorage.setItem("vmFeberUser", JSON.stringify(state.user));
-  localStorage.setItem("vmFeberLeagues", JSON.stringify(state.leagues));
 }
 
 function applyTheme(theme = state.theme) {
@@ -613,47 +612,85 @@ function renderMatches() {
 }
 
 function renderLeagues() {
-  document.querySelector("#leagueGrid").innerHTML = leagues
+  const grid = document.querySelector("#leagueGrid");
+  if (!state.sessionUserId) {
+    grid.innerHTML = '<p class="muted">Logg inn for å se og opprette ligaer.</p>';
+    return;
+  }
+  if (!state.leagues.length) {
+    grid.innerHTML = '<p class="muted">Du er ikke medlem av noen ligaer ennå.</p>';
+    return;
+  }
+
+  grid.innerHTML = state.leagues
     .map((league) => {
-      const isMember = state.leagues.includes(league.id);
       return `
-        <article class="league-card ${isMember ? "" : "locked"}">
+        <article class="league-card">
           <div>
-            <h4>${league.name}</h4>
-            <p>${league.members} medlemmer · kode ${league.code}</p>
+            <h4>${escapeHtml(league.name)}</h4>
+            <p>${league.member_count} medlemmer · kode ${escapeHtml(league.code)}</p>
           </div>
-          <span class="tag">${isMember ? "Medlem" : "Skjult poengtavle"}</span>
-          <button data-join="${league.code}" ${isMember ? "disabled" : ""}>${isMember ? "Du er med" : "Bruk kode"}</button>
+          <span class="tag">${league.is_main ? "Hovedkonkurranse" : league.member_role === "owner" ? "Eier" : "Medlem"}</span>
+          <button data-open-leaderboard="${league.id}">Se poengtavler</button>
         </article>
       `;
     })
     .join("");
 }
 
-function accessibleLeaderboards() {
-  return leagues.filter((league) => state.leagues.includes(league.id));
-}
-
 function renderLeaderboardOptions() {
   const select = document.querySelector("#leaderboardSelect");
-  select.innerHTML = accessibleLeaderboards()
-    .map((league) => `<option value="${league.id}">${league.name}</option>`)
+  select.innerHTML = state.leagues
+    .map((league) => `<option value="${league.id}">${escapeHtml(league.name)}</option>`)
     .join("");
-  renderLeaderboard(select.value || "total");
+  if (select.value) renderLeaderboard();
 }
 
-function renderLeaderboard(leagueId) {
-  const rows = leaderboardData[leagueId] || [];
-  document.querySelector("#leaderboard").innerHTML = rows
+async function renderLeaderboard() {
+  const leagueId = document.querySelector("#leaderboardSelect").value;
+  const mode = document.querySelector("#leaderboardModeSelect").value;
+  const dateInput = document.querySelector("#leaderboardDate");
+  const feedback = document.querySelector("#leaderboardFeedback");
+  const board = document.querySelector("#leaderboard");
+  const isDailyDate = mode === "daglig-dato";
+
+  dateInput.classList.toggle("hidden", !isDailyDate);
+  if (isDailyDate && !dateInput.value) dateInput.value = osloDateKey(new Date());
+
+  if (!leagueId || !state.sessionUserId) {
+    board.innerHTML = '<p class="muted">Logg inn og velg en liga for å se poengtavlen.</p>';
+    return;
+  }
+
+  feedback.textContent = "Laster poengtavle...";
+  const { data, error } = await window.vmFeberSupabase.rpc("get_league_leaderboard", {
+    selected_league_id: leagueId,
+    competition_slug: mode === "full-vm" ? "full-vm" : "daglig",
+    match_day: isDailyDate ? dateInput.value : null,
+  });
+
+  if (error) {
+    feedback.textContent = error.message;
+    board.innerHTML = "";
+    return;
+  }
+
+  state.leaderboardRows = data || [];
+  feedback.textContent = mode === "full-vm"
+    ? "Full VM totalt"
+    : isDailyDate
+      ? `Daglig poengtavle for ${dateInput.value}`
+      : "Daglig totalt gjennom hele VM";
+  board.innerHTML = state.leaderboardRows
     .map(
-      ([name, source, points], index) => `
+      (row) => `
         <div class="leader-row">
-          <span class="rank">${index + 1}</span>
+          <span class="rank">${row.rank}</span>
           <div class="leader-main">
-            <strong>${name}</strong>
-            <span>${source}</span>
+            <strong>${escapeHtml(row.username)}</strong>
+            <span>${row.exact_results} eksakte resultater · ${row.scored_predictions} tips med poeng</span>
           </div>
-          <span class="points">${points}</span>
+          <span class="points">${row.points}</span>
         </div>
       `,
     )
@@ -715,7 +752,6 @@ function setView(viewId) {
 }
 
 async function joinLeague(code) {
-  const match = leagues.find((league) => league.code.toLowerCase() === code.trim().toLowerCase());
   const feedback = document.querySelector("#leagueFeedback");
 
   if (state.supabaseReady && state.user) {
@@ -729,18 +765,40 @@ async function joinLeague(code) {
     }
 
     feedback.textContent = `Du er nå med i ${data.name}.`;
+    document.querySelector("#leagueCode").value = "";
+    await loadLeagues();
+    renderLeagues();
+    renderLeaderboardOptions();
     return;
   }
 
-  if (!match) {
-    feedback.textContent = "Fant ingen liga med den koden.";
+  feedback.textContent = "Du må være innlogget for å bli med i en liga.";
+}
+
+async function createLeague() {
+  const nameInput = document.querySelector("#newLeagueName");
+  const codeInput = document.querySelector("#newLeagueCode");
+  const feedback = document.querySelector("#createLeagueFeedback");
+
+  if (!state.sessionUserId) {
+    feedback.textContent = "Du må være innlogget for å opprette en liga.";
     return;
   }
-  if (!state.leagues.includes(match.id)) {
-    state.leagues.push(match.id);
-    save();
+
+  const { data, error } = await window.vmFeberSupabase.rpc("create_private_league", {
+    league_name: nameInput.value.trim(),
+    requested_code: codeInput.value.trim() || null,
+  });
+
+  if (error) {
+    feedback.textContent = error.message;
+    return;
   }
-  feedback.textContent = `Du er nå med i ${match.name}.`;
+
+  feedback.textContent = `${data.name} er opprettet med kode ${data.code}.`;
+  nameInput.value = "";
+  codeInput.value = "";
+  await loadLeagues();
   renderLeagues();
   renderLeaderboardOptions();
 }
@@ -777,12 +835,16 @@ function bindEvents() {
     state.user = null;
     state.sessionUserId = null;
     state.predictions = {};
+    state.leagues = [];
+    state.leaderboardRows = [];
     state.isAdmin = false;
     save();
     if (state.supabaseReady) {
       window.vmFeberSupabase.auth.signOut();
     }
     renderUser();
+    renderLeagues();
+    renderLeaderboardOptions();
     setView("overview");
   };
   document.querySelector("#logoutButton").addEventListener("click", logout);
@@ -830,15 +892,19 @@ function bindEvents() {
   document.querySelector("#joinLeagueButton").addEventListener("click", () => {
     joinLeague(document.querySelector("#leagueCode").value);
   });
+  document.querySelector("#createLeagueButton").addEventListener("click", createLeague);
 
   document.querySelector("#leagueGrid").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-join]");
-    if (button) joinLeague(button.dataset.join);
+    const button = event.target.closest("[data-open-leaderboard]");
+    if (!button) return;
+    document.querySelector("#leaderboardSelect").value = button.dataset.openLeaderboard;
+    setView("leaderboards");
+    renderLeaderboard();
   });
 
-  document.querySelector("#leaderboardSelect").addEventListener("change", (event) => {
-    renderLeaderboard(event.target.value);
-  });
+  document.querySelector("#leaderboardSelect").addEventListener("change", renderLeaderboard);
+  document.querySelector("#leaderboardModeSelect").addEventListener("change", renderLeaderboard);
+  document.querySelector("#leaderboardDate").addEventListener("change", renderLeaderboard);
 
   document.querySelector("#syncMatchesButton").addEventListener("click", () => {
     if (!state.supabaseReady || !state.user) {
@@ -856,6 +922,7 @@ async function init() {
   await loadMatches();
   await loadPredictions();
   await loadBackups();
+  await loadLeagues();
   renderModes();
   renderRules();
   renderMatches();
