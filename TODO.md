@@ -38,6 +38,14 @@
 
 ## Kampoppsett
 
+- [x] Vis kampfase og projisert vei gjennom sluttspillet.
+  - Merk gruppespillkampene med gruppe og runde 1, 2 eller 3.
+  - Merk sluttspillkampene med 16-delsfinale, åttedelsfinale, kvartfinale,
+    semifinale, bronsefinale eller finale.
+  - Vis hvilke gruppeplasseringer som går inn i hver sluttspillkamp.
+  - Bytt gruppeplasseringene til projiserte lagnavn og behold kvalifiseringsveien
+    når gruppetipsene er komplette.
+
 - [x] Legg til hurtigvalg: **Jeg stoler på skjebnen**.
   - Fyll automatisk inn resultatet for alle synlige og ulåste kamper.
   - Trekk hjemme- og bortemål uavhengig som tilfeldige heltall mellom 0 og 4.

@@ -144,6 +144,17 @@
             </div>
             <div class="group-standings-grid" id="groupStandingsGrid"></div>
             <div class="third-place-panel" id="thirdPlacePanel"></div>
+            <div class="knockout-heading">
+              <div>
+                <p class="eyebrow">Veien videre</p>
+                <h3>Projisert sluttspill</h3>
+              </div>
+              <p class="muted">
+                Lag og kvalifiseringsvei oppdateres fra gruppetipsene dine. Nøyaktig plassering
+                av de beste tredjeplassene avgjøres av FIFAs kombinasjonstabell.
+              </p>
+            </div>
+            <div class="projected-knockout" id="projectedKnockout"></div>
           </section>
           <div class="bonus-panel" id="bonusPanel"></div>
           <p class="data-credit">Kampdata levert av football-data.org</p>
@@ -226,6 +237,14 @@
                 <option value="light">Lyst</option>
                 <option value="dark">Mørkt</option>
               </select>
+              <label class="toggle-row" for="liveGroupToggle">
+                <span>
+                  <strong>Live gruppetabell</strong>
+                  <small>Vis flytende tabell mens du tipper på desktop</small>
+                </span>
+                <input id="liveGroupToggle" type="checkbox" />
+                <span class="toggle-switch" aria-hidden="true"></span>
+              </label>
             </section>
             <section class="settings-panel">
               <h4>Personvern og konto</h4>
@@ -294,6 +313,19 @@
         </footer>
       </main>
     </div>
+
+    <aside class="live-group-panel hidden" id="liveGroupPanel" aria-live="polite">
+      <div class="live-group-header">
+        <div>
+          <p class="eyebrow">Oppdateres mens du tipper</p>
+          <h3 id="liveGroupTitle">Live gruppetabell</h3>
+        </div>
+        <button id="closeLiveGroupButton" aria-label="Skjul live gruppetabell">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div id="liveGroupTable"></div>
+    </aside>
 
     <script src="app.js"></script>
   </body>

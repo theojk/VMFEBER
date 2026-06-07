@@ -203,6 +203,71 @@ h4 {
   font-weight: 800;
 }
 
+.toggle-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 10px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.toggle-row span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.toggle-row small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.toggle-row input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.toggle-switch {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  width: 44px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--line);
+  transition: background 160ms ease;
+}
+
+.toggle-switch::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  content: "";
+  transition: transform 160ms ease;
+}
+
+.toggle-row input:checked + .toggle-switch {
+  border-color: var(--green);
+  background: var(--green);
+}
+
+.toggle-row input:checked + .toggle-switch::after {
+  transform: translateX(20px);
+}
+
+.toggle-row input:focus-visible + .toggle-switch {
+  outline: 3px solid rgba(0, 32, 91, 0.25);
+  outline-offset: 2px;
+}
+
 .admin-heading {
   margin-top: 30px;
 }
@@ -597,10 +662,148 @@ select {
   overflow-x: auto;
 }
 
+.projected-knockout {
+  margin-top: 18px;
+}
+
+.knockout-round {
+  margin-top: 22px;
+}
+
+.knockout-round:first-child {
+  margin-top: 0;
+}
+
+.knockout-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.knockout-match {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.knockout-match > span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.knockout-team {
+  display: grid;
+  gap: 2px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+}
+
+.knockout-team strong {
+  overflow-wrap: anywhere;
+}
+
+.knockout-team small {
+  color: var(--muted);
+}
+
+.knockout-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 30px 0 14px;
+}
+
+.knockout-heading h3,
+.knockout-heading p {
+  margin-bottom: 0;
+}
+
+.knockout-heading > .muted {
+  max-width: 620px;
+  font-size: 0.82rem;
+}
+
+.match-stage-label {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 24px;
+  margin-bottom: 5px;
+  border-radius: 6px;
+  padding: 0 7px;
+  background: #e9efe7;
+  color: #2b4938;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
 .standings-note {
   margin: 10px 14px 14px;
   color: var(--muted);
   font-size: 0.78rem;
+}
+
+.live-group-panel {
+  position: fixed;
+  z-index: 25;
+  top: 86px;
+  right: 18px;
+  width: min(390px, calc(100vw - 36px));
+  max-height: calc(100vh - 104px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  overflow: auto;
+}
+
+.live-group-header {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.live-group-header h3 {
+  margin-bottom: 0;
+}
+
+.live-group-header button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.live-group-header svg {
+  width: 19px;
+  height: 19px;
+}
+
+.live-group-panel .standings-table {
+  min-width: 0;
+  font-size: 0.78rem;
+}
+
+.live-group-panel .standings-table th,
+.live-group-panel .standings-table td {
+  padding: 8px 4px;
 }
 
 .norway-match {
@@ -985,8 +1188,18 @@ img.flag {
   .settings-grid,
   .metric-grid,
   .league-grid,
-  .group-standings-grid {
+  .group-standings-grid,
+  .knockout-grid {
     grid-template-columns: 1fr;
+  }
+
+  .live-group-panel {
+    display: none !important;
+  }
+
+  .knockout-heading {
+    display: grid;
+    gap: 8px;
   }
 }
 

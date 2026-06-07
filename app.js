@@ -14,6 +14,8 @@ const state = {
   testUsers: [],
   isAdmin: false,
   theme: localStorage.getItem("vmFeberTheme") || "system",
+  liveGroupEnabled: localStorage.getItem("vmFeberLiveGroup") !== "off",
+  activeLiveGroup: null,
 };
 
 const competitions = [
@@ -465,6 +467,7 @@ function renderSettings() {
   document.querySelector("#settingsEmail").textContent = state.user?.email || "Logg inn for å endre profil.";
   document.querySelector("#defaultCompetition").value = state.predictionMode;
   document.querySelector("#themeSelect").value = state.theme;
+  document.querySelector("#liveGroupToggle").checked = state.liveGroupEnabled;
   document.querySelector("#saveProfileButton").disabled = !state.sessionUserId;
   document.querySelector("#settingsLogoutButton").disabled = !state.sessionUserId;
   document.querySelectorAll(".segment").forEach((segment) => {
@@ -662,7 +665,7 @@ function renderMatches() {
             <input type="number" min="0" data-score="away" value="${prediction?.away_score ?? ""}" aria-label="${match.away} mål" />
           </div>
           <div class="team">${match.awayCrest ? `<img class="flag" src="${match.awayCrest}" alt="" />` : `<span class="flag" style="background:${match.awayColor}"></span>`}${match.away}</div>
-          <div class="deadline">${match.date}<br />${match.deadline}</div>
+          <div class="deadline"><span class="match-stage-label">${escapeHtml(stageLabel(match))}</span><br />${match.date}<br />${match.deadline}</div>
           <button class="save-prediction" data-save-prediction="${match.id}" ${state.sessionUserId ? "" : "disabled"}>
             ${prediction?.inheritedFromFull ? "Bruk Full VM" : prediction ? "Lagret" : "Lagre"}
           </button>
@@ -680,6 +683,30 @@ function renderMatches() {
 function groupLabel(groupName) {
   const letter = String(groupName || "").match(/[A-L]$/i)?.[0]?.toUpperCase();
   return letter ? `Gruppe ${letter}` : String(groupName || "Gruppe");
+}
+
+function groupRound(match) {
+  const groupMatches = matches
+    .filter((item) => item.groupName === match.groupName)
+    .sort((a, b) => new Date(a.kickoffAt) - new Date(b.kickoffAt));
+  const index = groupMatches.findIndex((item) => item.id === match.id);
+  return index >= 0 ? Math.floor(index / 2) + 1 : null;
+}
+
+function stageLabel(match) {
+  if (match.stage === "GROUP_STAGE") {
+    const round = groupRound(match);
+    return `${groupLabel(match.groupName)} · ${round ? `${round}. runde` : "gruppespill"}`;
+  }
+
+  return {
+    LAST_32: "16-delsfinale",
+    LAST_16: "Åttedelsfinale",
+    QUARTER_FINALS: "Kvartfinale",
+    SEMI_FINALS: "Semifinale",
+    THIRD_PLACE: "Bronsefinale",
+    FINAL: "Finale",
+  }[match.stage] || String(match.stage || "Kamp").replaceAll("_", " ");
 }
 
 function projectedScore(match) {
@@ -811,6 +838,84 @@ function standingsRows(rows, thirdRanking = false) {
   }).join("");
 }
 
+const knockoutRounds = [
+  {
+    title: "16-delsfinaler",
+    matches: [
+      [73, "2A", "2B"], [74, "1E", "3A/B/C/D/F"], [75, "1F", "2C"], [76, "1C", "2F"],
+      [77, "1I", "3C/D/F/G/H"], [78, "2E", "2I"], [79, "1A", "3C/E/F/H/I"], [80, "1L", "3E/H/I/J/K"],
+      [81, "1D", "3B/E/F/I/J"], [82, "1G", "3A/E/H/I/J"], [83, "2K", "2L"], [84, "1H", "2J"],
+      [85, "1B", "3E/F/G/I/J"], [86, "1J", "2H"], [87, "1K", "3D/E/I/J/L"], [88, "2D", "2G"],
+    ],
+  },
+  {
+    title: "Åttedelsfinaler",
+    matches: [
+      [89, "V74", "V77"], [90, "V73", "V75"], [91, "V76", "V78"], [92, "V79", "V80"],
+      [93, "V83", "V84"], [94, "V81", "V82"], [95, "V86", "V88"], [96, "V85", "V87"],
+    ],
+  },
+  { title: "Kvartfinaler", matches: [[97, "V89", "V90"], [98, "V93", "V94"], [99, "V91", "V92"], [100, "V95", "V96"]] },
+  { title: "Semifinaler", matches: [[101, "V97", "V98"], [102, "V99", "V100"]] },
+  { title: "Bronsefinale og finale", matches: [[103, "T101", "T102"], [104, "V101", "V102"]] },
+];
+
+function knockoutSlot(origin, standingsByGroup, qualifyingThirds) {
+  if (/^[12][A-L]$/.test(origin)) {
+    const position = Number(origin[0]) - 1;
+    const groupLetter = origin[1];
+    const group = standingsByGroup.find((item) => item.label === `Gruppe ${groupLetter}`);
+    const team = group?.rows[position];
+    return {
+      name: team?.played === 3 ? team.name : `Nr. ${position + 1} i gruppe ${groupLetter}`,
+      origin: `${position + 1}. plass i gruppe ${groupLetter}`,
+    };
+  }
+
+  if (origin.startsWith("3")) {
+    const eligibleLetters = origin.slice(1).split("/");
+    const candidates = qualifyingThirds.filter((team) => eligibleLetters.includes(team.groupLetter));
+    return {
+      name: candidates.length ? candidates.map((team) => team.name).join(" / ") : "En av de beste tredjeplassene",
+      origin: `3. plass fra gruppe ${eligibleLetters.join(", ")}`,
+    };
+  }
+
+  const isWinner = origin.startsWith("V");
+  return {
+    name: `${isWinner ? "Vinner" : "Taper"} av kamp ${origin.slice(1)}`,
+    origin: "Avgjøres i sluttspillet",
+  };
+}
+
+function renderProjectedKnockout(standingsByGroup) {
+  const container = document.querySelector("#projectedKnockout");
+  const qualifyingThirds = standingsByGroup
+    .filter((group) => group.rows[2]?.played === 3)
+    .map((group) => ({ ...group.rows[2], groupLetter: group.label.slice(-1) }))
+    .sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor)
+    .slice(0, 8);
+
+  container.innerHTML = knockoutRounds.map((round) => `
+    <section class="knockout-round">
+      <h3>${round.title}</h3>
+      <div class="knockout-grid">
+        ${round.matches.map(([number, homeOrigin, awayOrigin]) => {
+          const home = knockoutSlot(homeOrigin, standingsByGroup, qualifyingThirds);
+          const away = knockoutSlot(awayOrigin, standingsByGroup, qualifyingThirds);
+          return `
+            <article class="knockout-match">
+              <span>Kamp ${number}</span>
+              <div class="knockout-team"><strong>${escapeHtml(home.name)}</strong><small>${escapeHtml(home.origin)}</small></div>
+              <div class="knockout-team"><strong>${escapeHtml(away.name)}</strong><small>${escapeHtml(away.origin)}</small></div>
+            </article>
+          `;
+        }).join("")}
+      </div>
+    </section>
+  `).join("");
+}
+
 function renderProjectedGroupTables() {
   const section = document.querySelector("#projectedStandings");
   const grid = document.querySelector("#groupStandingsGrid");
@@ -818,7 +923,10 @@ function renderProjectedGroupTables() {
   const groupedMatches = matches.filter((match) => match.groupName);
 
   section.classList.toggle("hidden", state.predictionMode !== "full" || !groupedMatches.length);
-  if (state.predictionMode !== "full" || !groupedMatches.length) return;
+  if (state.predictionMode !== "full" || !groupedMatches.length) {
+    renderLiveGroupPanel();
+    return;
+  }
 
   const groups = [...new Set(groupedMatches.map((match) => match.groupName))]
     .sort((a, b) => groupLabel(a).localeCompare(groupLabel(b), "nb"));
@@ -855,6 +963,56 @@ function renderProjectedGroupTables() {
     </table>
     <p class="standings-note">Grønn markering: foreløpig videre. Gruppene bruker innbyrdes oppgjør før samlet målforskjell og scorede mål. Fair play og FIFA-ranking kan ikke beregnes fra tipsene.</p>
   `;
+  renderProjectedKnockout(standingsByGroup);
+  renderLiveGroupPanel();
+}
+
+function setLiveGroupEnabled(enabled) {
+  state.liveGroupEnabled = enabled;
+  localStorage.setItem("vmFeberLiveGroup", enabled ? "on" : "off");
+  document.querySelector("#liveGroupToggle").checked = enabled;
+  renderLiveGroupPanel();
+}
+
+function renderLiveGroupPanel(groupName = state.activeLiveGroup) {
+  const panel = document.querySelector("#liveGroupPanel");
+  const predictionsVisible = document.querySelector("#predictions").classList.contains("active");
+  let groupMatches = matches.filter((match) => match.groupName === groupName);
+
+  if (!state.liveGroupEnabled || state.predictionMode !== "full" || !predictionsVisible) {
+    panel.classList.add("hidden");
+    return;
+  }
+
+  if (!groupMatches.length) {
+    const firstGroupMatch = matches.find((match) => match.groupName);
+    if (!firstGroupMatch) {
+      panel.classList.add("hidden");
+      return;
+    }
+    groupName = firstGroupMatch.groupName;
+    groupMatches = matches.filter((match) => match.groupName === groupName);
+  }
+
+  state.activeLiveGroup = groupName;
+  const rows = calculateGroupStandings(groupMatches);
+  document.querySelector("#liveGroupTitle").textContent = groupLabel(groupName);
+  document.querySelector("#liveGroupTable").innerHTML = `
+    <table class="standings-table">
+      <thead><tr><th>#</th><th>Lag</th><th>K</th><th>+/-</th><th>P</th></tr></thead>
+      <tbody>${rows.map((team, index) => `
+        <tr class="${index < 2 ? "qualifies" : index === 2 ? "third-place" : ""}">
+          <td>${index + 1}</td>
+          <td><span class="standing-team">${team.crest ? `<img src="${team.crest}" alt="" />` : ""}${escapeHtml(team.name)}</span></td>
+          <td>${team.played}</td>
+          <td>${team.goalDifference > 0 ? "+" : ""}${team.goalDifference}</td>
+          <td><strong>${team.points}</strong></td>
+        </tr>
+      `).join("")}</tbody>
+    </table>
+    <p class="standings-note">Oppdateres umiddelbart når du endrer et resultat i ${escapeHtml(groupLabel(groupName))}.</p>
+  `;
+  panel.classList.remove("hidden");
 }
 
 function renderLeagues() {
@@ -1137,6 +1295,7 @@ function setView(viewId) {
   document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === viewId));
   document.querySelector("#viewTitle").textContent = viewTitles[viewId];
+  renderLiveGroupPanel();
   closeMobileMenu();
 }
 
@@ -1147,6 +1306,13 @@ function setMobileMenu(open) {
 
 function closeMobileMenu() {
   setMobileMenu(false);
+}
+
+function showLiveGroupForMatchRow(row) {
+  const match = matches.find((item) => item.id === row?.dataset.matchId);
+  if (!match?.groupName) return;
+  state.activeLiveGroup = match.groupName;
+  renderLiveGroupPanel(match.groupName);
 }
 
 async function joinLeague(code) {
@@ -1322,6 +1488,10 @@ function bindEvents() {
   });
 
   document.querySelector("#themeSelect").addEventListener("change", (event) => applyTheme(event.target.value));
+  document.querySelector("#liveGroupToggle").addEventListener("change", (event) => {
+    setLiveGroupEnabled(event.target.checked);
+  });
+  document.querySelector("#closeLiveGroupButton").addEventListener("click", () => setLiveGroupEnabled(false));
 
   document.querySelectorAll(".segment").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1347,9 +1517,13 @@ function bindEvents() {
   document.querySelector("#matchList").addEventListener("input", (event) => {
     if (!event.target.matches("[data-score]")) return;
     const row = event.target.closest("[data-match-id]");
+    showLiveGroupForMatchRow(row);
     row.querySelector(".save-prediction").textContent = "Lagre";
     setPredictionFeedback("Du har ulagrede endringer.");
     renderProjectedGroupTables();
+  });
+  document.querySelector("#matchList").addEventListener("focusin", (event) => {
+    if (event.target.matches("[data-score]")) showLiveGroupForMatchRow(event.target.closest("[data-match-id]"));
   });
 
   document.querySelector("#joinLeagueButton").addEventListener("click", () => {
