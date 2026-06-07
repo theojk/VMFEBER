@@ -28,6 +28,16 @@ begin
     raise exception 'Du ma vaere innlogget for a lagre tips.';
   end if;
 
+  insert into public.profiles (id, username, email, registration_source)
+  select
+    auth_user.id,
+    public.profile_username_for_user(auth_user.id, auth_user.email, auth_user.raw_user_meta_data ->> 'username'),
+    auth_user.email,
+    'open'
+  from auth.users auth_user
+  where auth_user.id = auth.uid()
+  on conflict (id) do nothing;
+
   if predicted_home_score < 0 or predicted_away_score < 0 then
     raise exception 'Resultatet kan ikke inneholde negative tall.';
   end if;

@@ -460,6 +460,10 @@ async function sendMagicLink(email, username, inviteCode) {
     email,
     options: {
       emailRedirectTo: redirectTo,
+      data: {
+        username,
+        invite_code: inviteCode || null,
+      },
     },
   });
 

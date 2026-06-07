@@ -91,6 +91,9 @@ konkurransen for backup og poengberegning.
 Kjor `supabase-settings-setup.sql` for sikre profilinnstillinger. Den begrenser
 brukere til a endre eget brukernavn, uten tilgang til adminflagget.
 
+Kjor `supabase-profile-repair.sql` for a reparere Auth-brukere som mangler
+profil, og for automatisk profilopprettelse ved fremtidige registreringer.
+
 ## Automatisk backup av alle tips
 
 Ved hver frist lagres et uforanderlig snapshot av alle relevante tips i
