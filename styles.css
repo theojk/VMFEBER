@@ -726,6 +726,11 @@ img.flag {
   margin-bottom: 18px;
 }
 
+.league-heading {
+  margin-top: 26px;
+  margin-bottom: 12px;
+}
+
 .league-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -733,6 +738,16 @@ img.flag {
 .league-card {
   display: grid;
   gap: 12px;
+}
+
+.league-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.league-actions > :only-child {
+  grid-column: 1 / -1;
 }
 
 .league-card.locked {
@@ -1010,5 +1025,9 @@ img.flag {
 
   .input-row {
     display: grid;
+  }
+
+  .league-actions {
+    grid-template-columns: 1fr;
   }
 }

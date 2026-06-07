@@ -146,15 +146,25 @@
             <p class="microcopy" id="leagueFeedback">Kun medlemmer kan se poengtavlen i en privat liga.</p>
           </div>
           <div class="league-join">
-            <label for="newLeagueName">Opprett privat liga</label>
+            <label for="newLeagueName">Opprett liga</label>
             <div class="input-row league-create-row">
               <input id="newLeagueName" placeholder="Liganavn" />
-              <input id="newLeagueCode" placeholder="Valgfri kode" maxlength="12" />
+              <select id="newLeagueVisibility" aria-label="Velg ligasynlighet">
+                <option value="private">Privat · krever kode</option>
+                <option value="public">Offentlig · alle kan bli med</option>
+              </select>
               <button id="createLeagueButton">Opprett</button>
             </div>
-            <p class="microcopy" id="createLeagueFeedback">Du blir automatisk eier og medlem.</p>
+            <p class="microcopy" id="createLeagueFeedback">En delbar ligakode genereres automatisk.</p>
+          </div>
+          <div class="section-heading league-heading">
+            <h3>Mine ligaer</h3>
           </div>
           <div class="league-grid" id="leagueGrid"></div>
+          <div class="section-heading league-heading">
+            <h3>Offentlige ligaer</h3>
+          </div>
+          <div class="league-grid" id="publicLeagueGrid"></div>
         </section>
 
         <section class="view" id="leaderboards">

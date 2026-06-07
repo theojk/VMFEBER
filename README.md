@@ -100,8 +100,9 @@ profil, og for automatisk profilopprettelse ved fremtidige registreringer.
 
 Kjor `supabase-leagues-setup.sql` i SQL Editor. Den aktiverer:
 
-- opprettelse av private ligaer med kode
+- opprettelse av offentlige eller private ligaer med automatisk generert kode
 - innmelding i ligaer med kode
+- utforsking og direkte innmelding i offentlige ligaer
 - Full VM-poengtavle for hver liga
 - daglig poengtavle per kampdato
 - samlet daglig poengtavle gjennom hele VM

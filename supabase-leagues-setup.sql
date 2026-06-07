@@ -1,8 +1,11 @@
 -- Kjor denne i Supabase SQL Editor for ekte ligaer og poengtavler.
 
-create or replace function public.create_private_league(
+alter table public.leagues
+  add column if not exists is_public boolean not null default false;
+
+create or replace function public.create_league(
   league_name text,
-  requested_code text default null
+  league_is_public boolean default false
 )
 returns public.leagues
 language plpgsql
@@ -23,18 +26,13 @@ begin
     raise exception 'Liganavnet ma vaere mellom 2 og 60 tegn.';
   end if;
 
-  clean_code := upper(regexp_replace(coalesce(nullif(trim(requested_code), ''), clean_name), '[^A-Za-z0-9]', '', 'g'));
-  clean_code := left(clean_code, 12);
-  if char_length(clean_code) < 4 then
+  loop
     clean_code := 'VM' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
-  end if;
+    exit when not exists (select 1 from public.leagues where lower(code) = lower(clean_code));
+  end loop;
 
-  if exists (select 1 from public.leagues where lower(code) = lower(clean_code)) then
-    raise exception 'Ligakoden er allerede i bruk. Velg en annen kode.';
-  end if;
-
-  insert into public.leagues (name, code, created_by, is_main)
-  values (clean_name, clean_code, auth.uid(), false)
+  insert into public.leagues (name, code, created_by, is_main, is_public)
+  values (clean_name, clean_code, auth.uid(), false, coalesce(league_is_public, false))
   returning * into created_league;
 
   insert into public.league_members (league_id, user_id, role)
@@ -45,12 +43,15 @@ begin
 end;
 $$;
 
+drop function if exists public.get_my_leagues();
+
 create or replace function public.get_my_leagues()
 returns table (
   id uuid,
   name text,
   code text,
   is_main boolean,
+  is_public boolean,
   member_role text,
   member_count bigint
 )
@@ -63,6 +64,7 @@ as $$
     l.name,
     l.code,
     l.is_main,
+    l.is_public,
     lm.role as member_role,
     (select count(*) from public.league_members members where members.league_id = l.id) as member_count
   from public.leagues l
@@ -70,6 +72,64 @@ as $$
     on lm.league_id = l.id
    and lm.user_id = auth.uid()
   order by l.is_main desc, l.created_at asc;
+$$;
+
+create or replace function public.get_public_leagues()
+returns table (
+  id uuid,
+  name text,
+  member_count bigint
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    l.id,
+    l.name,
+    (select count(*) from public.league_members members where members.league_id = l.id) as member_count
+  from public.leagues l
+  where l.is_public = true
+    and l.is_main = false
+    and not exists (
+      select 1
+      from public.league_members own_membership
+      where own_membership.league_id = l.id
+        and own_membership.user_id = auth.uid()
+    )
+  order by 3 desc, l.created_at desc;
+$$;
+
+create or replace function public.join_public_league(selected_league_id uuid)
+returns public.leagues
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  found_league public.leagues;
+begin
+  if auth.uid() is null then
+    raise exception 'Du ma vaere innlogget.';
+  end if;
+
+  select *
+  into found_league
+  from public.leagues
+  where id = selected_league_id
+    and is_public = true
+    and is_main = false;
+
+  if found_league.id is null then
+    raise exception 'Fant ikke en offentlig liga.';
+  end if;
+
+  insert into public.league_members (league_id, user_id)
+  values (found_league.id, auth.uid())
+  on conflict (league_id, user_id) do nothing;
+
+  return found_league;
+end;
 $$;
 
 create or replace function public.get_league_leaderboard(
@@ -177,15 +237,21 @@ begin
 end;
 $$;
 
-revoke all on function public.create_private_league(text, text) from public, anon;
+revoke all on function public.create_league(text, boolean) from public, anon;
 revoke all on function public.get_my_leagues() from public, anon;
+revoke all on function public.get_public_leagues() from public, anon;
+revoke all on function public.join_public_league(uuid) from public, anon;
 revoke all on function public.get_league_leaderboard(uuid, text, date) from public, anon;
 revoke all on function public.recalculate_match_prediction_points() from public, anon;
 
-grant execute on function public.create_private_league(text, text) to authenticated;
+grant execute on function public.create_league(text, boolean) to authenticated;
 grant execute on function public.get_my_leagues() to authenticated;
+grant execute on function public.get_public_leagues() to authenticated;
+grant execute on function public.join_public_league(uuid) to authenticated;
 grant execute on function public.get_league_leaderboard(uuid, text, date) to authenticated;
 grant execute on function public.recalculate_match_prediction_points() to authenticated, service_role;
+
+drop function if exists public.create_private_league(text, text);
 
 insert into public.league_members (league_id, user_id)
 select l.id, p.id

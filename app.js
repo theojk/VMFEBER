@@ -1,6 +1,7 @@
 const state = {
   user: JSON.parse(localStorage.getItem("vmFeberUser") || "null"),
   leagues: [],
+  publicLeagues: [],
   leaderboardRows: [],
   predictionMode: "daily",
   supabaseReady: Boolean(window.vmFeberSupabaseReady),
@@ -193,20 +194,26 @@ async function loadBackups() {
 async function loadLeagues() {
   if (!state.supabaseReady || !state.sessionUserId) {
     state.leagues = [];
+    state.publicLeagues = [];
     return;
   }
 
-  const { data, error } = await window.vmFeberSupabase.rpc("get_my_leagues");
-  if (error) {
+  const [{ data, error }, { data: publicData, error: publicError }] = await Promise.all([
+    window.vmFeberSupabase.rpc("get_my_leagues"),
+    window.vmFeberSupabase.rpc("get_public_leagues"),
+  ]);
+  if (error || publicError) {
     state.leagues = [];
+    state.publicLeagues = [];
     document.querySelector("#leagueFeedback").textContent =
-      error.message.includes("get_my_leagues")
+      (error?.message || publicError?.message || "").includes("get_")
         ? "Ligasystemet må aktiveres i Supabase."
-        : error.message;
+        : error?.message || publicError?.message;
     return;
   }
 
   state.leagues = data || [];
+  state.publicLeagues = publicData || [];
 }
 
 function activeCompetitionSlug() {
@@ -613,29 +620,48 @@ function renderMatches() {
 
 function renderLeagues() {
   const grid = document.querySelector("#leagueGrid");
+  const publicGrid = document.querySelector("#publicLeagueGrid");
   if (!state.sessionUserId) {
     grid.innerHTML = '<p class="muted">Logg inn for å se og opprette ligaer.</p>';
+    publicGrid.innerHTML = '<p class="muted">Logg inn for å utforske offentlige ligaer.</p>';
     return;
   }
   if (!state.leagues.length) {
     grid.innerHTML = '<p class="muted">Du er ikke medlem av noen ligaer ennå.</p>';
-    return;
+  } else {
+    grid.innerHTML = state.leagues
+      .map((league) => {
+        return `
+          <article class="league-card">
+            <div>
+              <h4>${escapeHtml(league.name)}</h4>
+              <p>${league.member_count} medlemmer · kode ${escapeHtml(league.code)}</p>
+            </div>
+            <span class="tag">${league.is_main ? "Hovedkonkurranse" : league.is_public ? "Offentlig" : "Privat"} · ${league.member_role === "owner" ? "Eier" : "Medlem"}</span>
+            <div class="league-actions">
+              ${league.is_main ? "" : `<button data-copy-code="${escapeHtml(league.code)}">Kopier kode</button>`}
+              <button data-open-leaderboard="${league.id}">Se poengtavler</button>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
   }
 
-  grid.innerHTML = state.leagues
-    .map((league) => {
-      return `
+  publicGrid.innerHTML = state.publicLeagues.length
+    ? state.publicLeagues
+      .map((league) => `
         <article class="league-card">
           <div>
             <h4>${escapeHtml(league.name)}</h4>
-            <p>${league.member_count} medlemmer · kode ${escapeHtml(league.code)}</p>
+            <p>${league.member_count} medlemmer</p>
           </div>
-          <span class="tag">${league.is_main ? "Hovedkonkurranse" : league.member_role === "owner" ? "Eier" : "Medlem"}</span>
-          <button data-open-leaderboard="${league.id}">Se poengtavler</button>
+          <span class="tag">Offentlig</span>
+          <button data-join-public="${league.id}">Bli med</button>
         </article>
-      `;
-    })
-    .join("");
+      `)
+      .join("")
+    : '<p class="muted">Ingen andre offentlige ligaer akkurat nå.</p>';
 }
 
 function renderLeaderboardOptions() {
@@ -695,6 +721,7 @@ async function renderLeaderboard() {
       `,
     )
     .join("");
+
 }
 
 function renderAdmin() {
@@ -787,7 +814,7 @@ async function joinLeague(code) {
 
 async function createLeague() {
   const nameInput = document.querySelector("#newLeagueName");
-  const codeInput = document.querySelector("#newLeagueCode");
+  const visibilityInput = document.querySelector("#newLeagueVisibility");
   const feedback = document.querySelector("#createLeagueFeedback");
 
   if (!state.sessionUserId) {
@@ -795,9 +822,9 @@ async function createLeague() {
     return;
   }
 
-  const { data, error } = await window.vmFeberSupabase.rpc("create_private_league", {
+  const { data, error } = await window.vmFeberSupabase.rpc("create_league", {
     league_name: nameInput.value.trim(),
-    requested_code: codeInput.value.trim() || null,
+    league_is_public: visibilityInput.value === "public",
   });
 
   if (error) {
@@ -807,10 +834,37 @@ async function createLeague() {
 
   feedback.textContent = `${data.name} er opprettet med kode ${data.code}.`;
   nameInput.value = "";
-  codeInput.value = "";
+  visibilityInput.value = "private";
   await loadLeagues();
   renderLeagues();
   renderLeaderboardOptions();
+}
+
+async function joinPublicLeague(leagueId) {
+  const feedback = document.querySelector("#leagueFeedback");
+  const { data, error } = await window.vmFeberSupabase.rpc("join_public_league", {
+    selected_league_id: leagueId,
+  });
+
+  if (error) {
+    feedback.textContent = error.message;
+    return;
+  }
+
+  feedback.textContent = `Du er nå med i ${data.name}.`;
+  await loadLeagues();
+  renderLeagues();
+  renderLeaderboardOptions();
+}
+
+async function copyLeagueCode(code) {
+  const feedback = document.querySelector("#leagueFeedback");
+  try {
+    await navigator.clipboard.writeText(code);
+    feedback.textContent = `Ligakoden ${code} er kopiert.`;
+  } catch {
+    feedback.textContent = `Ligakode: ${code}`;
+  }
 }
 
 function bindEvents() {
@@ -853,6 +907,7 @@ function bindEvents() {
     state.sessionUserId = null;
     state.predictions = {};
     state.leagues = [];
+    state.publicLeagues = [];
     state.leaderboardRows = [];
     state.isAdmin = false;
     save();
@@ -912,11 +967,20 @@ function bindEvents() {
   document.querySelector("#createLeagueButton").addEventListener("click", createLeague);
 
   document.querySelector("#leagueGrid").addEventListener("click", (event) => {
+    const copyButton = event.target.closest("[data-copy-code]");
+    if (copyButton) {
+      copyLeagueCode(copyButton.dataset.copyCode);
+      return;
+    }
     const button = event.target.closest("[data-open-leaderboard]");
     if (!button) return;
     document.querySelector("#leaderboardSelect").value = button.dataset.openLeaderboard;
     setView("leaderboards");
     renderLeaderboard();
+  });
+  document.querySelector("#publicLeagueGrid").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-join-public]");
+    if (button) joinPublicLeague(button.dataset.joinPublic);
   });
 
   document.querySelector("#leaderboardSelect").addEventListener("change", renderLeaderboard);

@@ -29,6 +29,7 @@ create table if not exists public.leagues (
   code text not null unique,
   created_by uuid references public.profiles(id) on delete set null,
   is_main boolean not null default false,
+  is_public boolean not null default false,
   created_at timestamptz not null default now()
 );
 

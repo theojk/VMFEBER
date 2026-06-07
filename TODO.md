@@ -19,6 +19,23 @@
   - La admin legge inn, endre og slette testbrukernes tips uten magic-link-login.
   - Krev bekreftelse før en testbruker og tilhorende tips slettes.
 
+## Poengtavler og tipsinnsyn
+
+- [ ] La ligamedlemmer klikke på en bruker i poengtavlen for å se brukerens tips
+  og opptjente poeng.
+  - Vis kun tips til andre brukere etter at fristen for den relevante
+    konkurransen eller kampdagen har utløpt.
+  - For Daglig tipping: vis dagens tips etter kl. 12:00 norsk tid, også før
+    kampene er ferdigspilt.
+  - For Full VM: vis tipsene etter den samlede Full VM-fristen.
+  - Vis kampresultat, brukerens tips og tildelte poeng på hver kamp.
+  - Forklar poengene tydelig: eksakt resultat, riktig kamputfall eller ingen
+    poeng.
+  - Stott filtrering mellom Full VM, Daglig totalt og en bestemt kampdato.
+  - Brukere skal bare kunne åpne profiler til medlemmer i ligaer de selv er
+    medlem av.
+  - Testbrukere og testbrukernes tips skal fortsatt kun være synlige for admin.
+
 ## Kampoppsett
 
 - [ ] Legg til hurtigvalg: **Jeg stoler på skjebnen**.
