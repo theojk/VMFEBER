@@ -135,6 +135,16 @@
             </div>
           </div>
           <div class="match-list" id="matchList"></div>
+          <section class="projected-standings" id="projectedStandings">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Basert på dine tips</p>
+                <h3>Projiserte gruppetabeller</h3>
+              </div>
+            </div>
+            <div class="group-standings-grid" id="groupStandingsGrid"></div>
+            <div class="third-place-panel" id="thirdPlacePanel"></div>
+          </section>
           <div class="bonus-panel" id="bonusPanel"></div>
           <p class="data-credit">Kampdata levert av football-data.org</p>
         </section>
@@ -256,6 +266,16 @@
               <h4>Registrerte brukere</h4>
               <p class="muted" id="adminUserSummary">Brukeroversikten lastes...</p>
               <div class="admin-user-list" id="adminUserList"></div>
+              </section>
+              <section class="admin-panel admin-users-panel">
+              <h4>Testbrukere</h4>
+              <p class="muted">Kun synlige her. De påvirker ikke ekte ligaer, poengtavler eller backuper.</p>
+              <div class="input-row">
+                <input id="newTestUsername" placeholder="Testbrukernavn" />
+                <button id="createTestUserButton">Opprett</button>
+              </div>
+              <p class="microcopy" id="testUserFeedback"></p>
+              <div class="admin-user-list" id="testUserList"></div>
               </section>
             </div>
           </div>

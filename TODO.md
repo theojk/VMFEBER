@@ -10,7 +10,7 @@
   - Gjør oversikten tilgjengelig kun for admin og hent data gjennom en
     tilgangskontrollert databasefunksjon.
 
-- [ ] La admin opprette og administrere testbrukere.
+- [x] La admin opprette og administrere testbrukere.
   - Testbrukere skal merkes tydelig som testbrukere i adminoversikten.
   - Testbrukere og tipsene deres skal kun være synlige for admin.
   - Skjul testbrukere fra hovedkonkurransen, private ligamedlemslister og alle

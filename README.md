@@ -13,6 +13,7 @@ Se [TODO.md](TODO.md) for planlagte forbedringer og undersokte integrasjoner.
   - Daglig konkurranse med frist kl. 12:00 norsk tid
 - Private ligaer med kode
 - Poengtavler som bare vises for ligaer brukeren er medlem av
+- Autooppdaterte projiserte tabeller for alle 12 VM-grupper og tredjeplasser
 - Enkel adminskisse for invitasjoner og resultater
 
 ## Neste naturlige steg
@@ -100,6 +101,12 @@ Kjor `supabase-admin-users-setup.sql` for ekte invitasjonskoder og en
 adminbeskyttet oversikt over registrerte brukere. Filen validerer
 invitasjonskoder, teller registreringer og begrenser lesing av e-postadresser
 til brukeren selv og admin.
+
+Kjor `supabase-test-users-setup.sql` for testbrukere som kun finnes i
+adminomradet. Testbrukerne kan fa tilfeldige Full VM- og Daglig-tips, men
+holdes helt utenfor ekte ligaer, poengtavler og backuper.
+Deploy deretter den oppdaterte `sync-world-cup` Edge Function-koden, slik at
+testbrukernes poeng ogsa beregnes etter kampdatasynkronisering.
 
 ## Ligaer og poengtavler
 

@@ -11,6 +11,7 @@ const state = {
   backups: [],
   adminInvitations: [],
   adminUsers: [],
+  testUsers: [],
   isAdmin: false,
   theme: localStorage.getItem("vmFeberTheme") || "system",
 };
@@ -143,6 +144,8 @@ async function loadMatches() {
     id: match.id,
     home: match.home_team,
     away: match.away_team,
+    stage: match.stage,
+    groupName: match.group_name,
     homeCrest: match.home_crest,
     awayCrest: match.away_crest,
     homeColor: "#e9efe7",
@@ -197,21 +200,29 @@ async function loadAdminData() {
   if (!state.supabaseReady || !state.sessionUserId || !state.isAdmin) {
     state.adminInvitations = [];
     state.adminUsers = [];
+    state.testUsers = [];
     return;
   }
 
-  const [{ data: invitations, error: invitationError }, { data: users, error: userError }] =
+  const [
+    { data: invitations, error: invitationError },
+    { data: users, error: userError },
+    { data: testUsers, error: testUserError },
+  ] =
     await Promise.all([
       window.vmFeberSupabase.rpc("get_admin_invitations"),
       window.vmFeberSupabase.rpc("get_admin_users"),
+      window.vmFeberSupabase.rpc("get_admin_test_users"),
     ]);
 
   state.adminInvitations = invitationError ? [] : invitations || [];
   state.adminUsers = userError ? [] : users || [];
+  state.testUsers = testUserError ? [] : testUsers || [];
 
   const feedback = document.querySelector("#inviteFeedback");
-  if (invitationError || userError) {
-    feedback.textContent = invitationError?.message || userError?.message || "Kunne ikke laste admindata.";
+  if (invitationError || userError || testUserError) {
+    feedback.textContent =
+      invitationError?.message || userError?.message || testUserError?.message || "Kunne ikke laste admindata.";
   }
 }
 
@@ -359,6 +370,7 @@ function randomizeVisiblePredictions() {
     row.querySelector('[data-score="away"]').value = randomScore();
     row.querySelector(".save-prediction").textContent = "Lagre";
   });
+  renderProjectedGroupTables();
   setPredictionFeedback(
     `${rows.length} tilfeldige resultater er fylt inn. Kontroller dem og trykk «Lagre synlige tips».`,
     "success",
@@ -662,6 +674,187 @@ function renderMatches() {
 
   document.querySelector("#bonusPanel").innerHTML = extra;
   updatePredictionToolbar();
+  renderProjectedGroupTables();
+}
+
+function groupLabel(groupName) {
+  const letter = String(groupName || "").match(/[A-L]$/i)?.[0]?.toUpperCase();
+  return letter ? `Gruppe ${letter}` : String(groupName || "Gruppe");
+}
+
+function projectedScore(match) {
+  const row = document.querySelector(`[data-match-id="${match.id}"]`);
+  if (row) {
+    const home = row.querySelector('[data-score="home"]').value;
+    const away = row.querySelector('[data-score="away"]').value;
+    if (home !== "" && away !== "") return [Number(home), Number(away)];
+  }
+
+  const prediction = activePrediction(match.id);
+  return prediction ? [prediction.home_score, prediction.away_score] : null;
+}
+
+function calculateGroupStandings(groupMatches) {
+  const teams = new Map();
+  const ensureTeam = (name, crest) => {
+    if (!teams.has(name)) {
+      teams.set(name, {
+        name,
+        crest,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        points: 0,
+      });
+    }
+    return teams.get(name);
+  };
+
+  groupMatches.forEach((match) => {
+    const home = ensureTeam(match.home, match.homeCrest);
+    const away = ensureTeam(match.away, match.awayCrest);
+    const score = projectedScore(match);
+    if (!score) return;
+
+    const [homeScore, awayScore] = score;
+    home.played += 1;
+    away.played += 1;
+    home.goalsFor += homeScore;
+    home.goalsAgainst += awayScore;
+    away.goalsFor += awayScore;
+    away.goalsAgainst += homeScore;
+    if (homeScore === awayScore) {
+      home.drawn += 1;
+      away.drawn += 1;
+      home.points += 1;
+      away.points += 1;
+    } else if (homeScore > awayScore) {
+      home.won += 1;
+      away.lost += 1;
+      home.points += 3;
+    } else {
+      away.won += 1;
+      home.lost += 1;
+      away.points += 3;
+    }
+  });
+
+  const rows = [...teams.values()]
+    .map((team) => ({ ...team, goalDifference: team.goalsFor - team.goalsAgainst }));
+  const headToHead = (teamNames) => {
+    const mini = new Map(teamNames.map((name) => [name, { points: 0, goalsFor: 0, goalsAgainst: 0 }]));
+    groupMatches.forEach((match) => {
+      if (!mini.has(match.home) || !mini.has(match.away)) return;
+      const score = projectedScore(match);
+      if (!score) return;
+      const [homeScore, awayScore] = score;
+      const home = mini.get(match.home);
+      const away = mini.get(match.away);
+      home.goalsFor += homeScore;
+      home.goalsAgainst += awayScore;
+      away.goalsFor += awayScore;
+      away.goalsAgainst += homeScore;
+      if (homeScore === awayScore) {
+        home.points += 1;
+        away.points += 1;
+      } else if (homeScore > awayScore) {
+        home.points += 3;
+      } else {
+        away.points += 3;
+      }
+    });
+    return mini;
+  };
+
+  const pointGroups = new Map();
+  rows.forEach((team) => {
+    if (!pointGroups.has(team.points)) pointGroups.set(team.points, []);
+    pointGroups.get(team.points).push(team);
+  });
+  return [...pointGroups.entries()]
+    .sort(([pointsA], [pointsB]) => pointsB - pointsA)
+    .flatMap(([, tiedTeams]) => {
+      const mini = headToHead(tiedTeams.map((team) => team.name));
+      return tiedTeams.sort((a, b) => {
+        const miniA = mini.get(a.name);
+        const miniB = mini.get(b.name);
+        return miniB.points - miniA.points
+          || (miniB.goalsFor - miniB.goalsAgainst) - (miniA.goalsFor - miniA.goalsAgainst)
+          || miniB.goalsFor - miniA.goalsFor
+          || b.goalDifference - a.goalDifference
+          || b.goalsFor - a.goalsFor
+          || a.name.localeCompare(b.name, "nb");
+      });
+    });
+}
+
+function standingsRows(rows, thirdRanking = false) {
+  return rows.map((team, index) => {
+    const rowClass = thirdRanking
+      ? index < 8 ? "best-third" : ""
+      : index < 2 ? "qualifies" : index === 2 ? "third-place" : "";
+    return `
+      <tr class="${rowClass}">
+        <td>${index + 1}</td>
+        <td><span class="standing-team">${team.crest ? `<img src="${team.crest}" alt="" />` : ""}${escapeHtml(team.name)}</span></td>
+        ${thirdRanking ? `<td>${escapeHtml(team.groupLabel)}</td>` : ""}
+        <td>${team.played}</td>
+        ${thirdRanking ? "" : `<td>${team.won}</td><td>${team.drawn}</td><td>${team.lost}</td>`}
+        <td>${team.goalsFor}-${team.goalsAgainst}</td>
+        <td>${team.goalDifference > 0 ? "+" : ""}${team.goalDifference}</td>
+        <td><strong>${team.points}</strong></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderProjectedGroupTables() {
+  const section = document.querySelector("#projectedStandings");
+  const grid = document.querySelector("#groupStandingsGrid");
+  const thirdPanel = document.querySelector("#thirdPlacePanel");
+  const groupedMatches = matches.filter((match) => match.groupName);
+
+  section.classList.toggle("hidden", state.predictionMode !== "full" || !groupedMatches.length);
+  if (state.predictionMode !== "full" || !groupedMatches.length) return;
+
+  const groups = [...new Set(groupedMatches.map((match) => match.groupName))]
+    .sort((a, b) => groupLabel(a).localeCompare(groupLabel(b), "nb"));
+  const standingsByGroup = groups.map((groupName) => ({
+    groupName,
+    label: groupLabel(groupName),
+    rows: calculateGroupStandings(groupedMatches.filter((match) => match.groupName === groupName)),
+  }));
+
+  grid.innerHTML = standingsByGroup.map((group) => `
+    <article class="group-table-card">
+      <h4>${escapeHtml(group.label)}</h4>
+      <table class="standings-table">
+        <thead><tr><th>#</th><th>Lag</th><th>K</th><th>V</th><th>U</th><th>T</th><th>Mål</th><th>+/-</th><th>P</th></tr></thead>
+        <tbody>${standingsRows(group.rows)}</tbody>
+      </table>
+    </article>
+  `).join("");
+
+  const thirdPlaces = standingsByGroup
+    .filter((group) => group.rows[2])
+    .map((group) => ({ ...group.rows[2], groupLabel: group.label }))
+    .sort((a, b) =>
+      b.points - a.points
+      || b.goalDifference - a.goalDifference
+      || b.goalsFor - a.goalsFor
+      || a.name.localeCompare(b.name, "nb"),
+    );
+  thirdPanel.innerHTML = `
+    <h4>Rangering av tredjeplasser</h4>
+    <table class="standings-table">
+      <thead><tr><th>#</th><th>Lag</th><th>Gr.</th><th>K</th><th>Mål</th><th>+/-</th><th>P</th></tr></thead>
+      <tbody>${standingsRows(thirdPlaces, true)}</tbody>
+    </table>
+    <p class="standings-note">Grønn markering: foreløpig videre. Gruppene bruker innbyrdes oppgjør før samlet målforskjell og scorede mål. Fair play og FIFA-ranking kan ikke beregnes fra tipsene.</p>
+  `;
 }
 
 function renderLeagues() {
@@ -820,6 +1013,23 @@ function renderAdmin() {
       `)
       .join("")
     : '<p class="muted">Ingen registrerte brukere funnet.</p>';
+
+  document.querySelector("#testUserList").innerHTML = state.testUsers.length
+    ? state.testUsers
+      .map((user) => `
+        <div class="admin-user-row">
+          <strong>${escapeHtml(user.username)} <span class="tag">Test</span></strong>
+          <span>Full VM: ${user.full_prediction_count} tips · ${user.full_points} poeng</span>
+          <span>Daglig: ${user.daily_prediction_count} tips · ${user.daily_points} poeng</span>
+          <div class="admin-user-actions">
+            <button data-randomize-test="${user.id}" data-test-mode="full-vm">Tilfeldig Full VM</button>
+            <button data-randomize-test="${user.id}" data-test-mode="daglig">Tilfeldig Daglig</button>
+            <button class="danger-button" data-delete-test="${user.id}" data-test-name="${escapeHtml(user.username)}">Slett</button>
+          </div>
+        </div>
+      `)
+      .join("")
+    : '<p class="muted">Ingen testbrukere er opprettet.</p>';
 }
 
 async function createInvitation() {
@@ -841,6 +1051,59 @@ async function createInvitation() {
   feedback.textContent = `Invitasjonskoden ${data.code} er opprettet.`;
   labelInput.value = "";
   maxUsesInput.value = "";
+  await loadAdminData();
+  renderAdmin();
+}
+
+async function createTestUser() {
+  const input = document.querySelector("#newTestUsername");
+  const feedback = document.querySelector("#testUserFeedback");
+  const { data, error } = await window.vmFeberSupabase.rpc("create_test_user", {
+    test_username: input.value.trim(),
+  });
+
+  if (error) {
+    feedback.textContent = error.message;
+    return;
+  }
+
+  feedback.textContent = `${data.username} er opprettet som testbruker.`;
+  input.value = "";
+  await loadAdminData();
+  renderAdmin();
+}
+
+async function randomizeTestUser(testUserId, competitionSlug) {
+  const feedback = document.querySelector("#testUserFeedback");
+  const { data, error } = await window.vmFeberSupabase.rpc("randomize_test_user_predictions", {
+    selected_test_user_id: testUserId,
+    competition_slug: competitionSlug,
+  });
+
+  if (error) {
+    feedback.textContent = error.message;
+    return;
+  }
+
+  feedback.textContent = `${data} tilfeldige ${competitionSlug === "full-vm" ? "Full VM" : "Daglig"}-tips ble lagret.`;
+  await loadAdminData();
+  renderAdmin();
+}
+
+async function deleteTestUser(testUserId, username) {
+  if (!window.confirm(`Slette testbrukeren ${username} og alle tipsene?`)) return;
+
+  const feedback = document.querySelector("#testUserFeedback");
+  const { error } = await window.vmFeberSupabase.rpc("delete_test_user", {
+    selected_test_user_id: testUserId,
+  });
+
+  if (error) {
+    feedback.textContent = error.message;
+    return;
+  }
+
+  feedback.textContent = `${username} er slettet.`;
   await loadAdminData();
   renderAdmin();
 }
@@ -1019,6 +1282,7 @@ function bindEvents() {
     state.leaderboardRows = [];
     state.adminInvitations = [];
     state.adminUsers = [];
+    state.testUsers = [];
     state.isAdmin = false;
     save();
     if (state.supabaseReady) {
@@ -1033,9 +1297,19 @@ function bindEvents() {
   document.querySelector("#settingsLogoutButton").addEventListener("click", logout);
   document.querySelector("#saveProfileButton").addEventListener("click", saveProfileSettings);
   document.querySelector("#createInviteButton").addEventListener("click", createInvitation);
+  document.querySelector("#createTestUserButton").addEventListener("click", createTestUser);
   document.querySelector("#inviteList").addEventListener("click", (event) => {
     const button = event.target.closest("[data-copy-invite]");
     if (button) copyInvitationCode(button.dataset.copyInvite);
+  });
+  document.querySelector("#testUserList").addEventListener("click", (event) => {
+    const randomizeButton = event.target.closest("[data-randomize-test]");
+    if (randomizeButton) {
+      randomizeTestUser(randomizeButton.dataset.randomizeTest, randomizeButton.dataset.testMode);
+      return;
+    }
+    const deleteButton = event.target.closest("[data-delete-test]");
+    if (deleteButton) deleteTestUser(deleteButton.dataset.deleteTest, deleteButton.dataset.testName);
   });
 
   document.querySelector("#defaultCompetition").addEventListener("change", (event) => {
@@ -1075,6 +1349,7 @@ function bindEvents() {
     const row = event.target.closest("[data-match-id]");
     row.querySelector(".save-prediction").textContent = "Lagre";
     setPredictionFeedback("Du har ulagrede endringer.");
+    renderProjectedGroupTables();
   });
 
   document.querySelector("#joinLeagueButton").addEventListener("click", () => {
