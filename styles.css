@@ -679,6 +679,29 @@ select {
   display: block;
 }
 
+.prediction-toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.prediction-toolbar .fate-button {
+  border-color: var(--blue);
+  background: var(--panel);
+  color: var(--blue);
+}
+
+.fate-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.fate-button svg {
+  width: 19px;
+  height: 19px;
+}
+
 .prediction-toolbar span {
   margin-top: 2px;
   color: var(--muted);
@@ -1045,6 +1068,10 @@ img.flag {
 
   .prediction-toolbar button {
     width: 100%;
+  }
+
+  .prediction-toolbar-actions {
+    display: grid;
   }
 
   .bonus-grid,

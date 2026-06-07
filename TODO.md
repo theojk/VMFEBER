@@ -38,7 +38,7 @@
 
 ## Kampoppsett
 
-- [ ] Legg til hurtigvalg: **Jeg stoler på skjebnen**.
+- [x] Legg til hurtigvalg: **Jeg stoler på skjebnen**.
   - Fyll automatisk inn resultatet for alle synlige og ulåste kamper.
   - Trekk hjemme- og bortemål uavhengig som tilfeldige heltall mellom 0 og 4.
   - Skal fungere separat for både Full VM og Daglig tipping.

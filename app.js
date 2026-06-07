@@ -330,6 +330,41 @@ async function saveVisiblePredictions() {
   setPredictionFeedback(`${savedCount} tips ble lagret.`, "success");
 }
 
+function randomScore() {
+  return Math.floor(Math.random() * 5);
+}
+
+function randomizeVisiblePredictions() {
+  const rows = [...document.querySelectorAll("#matchList [data-match-id]")];
+  const deadline = state.predictionMode === "full" ? fullDeadline() : dailyDeadline(visibleMatches());
+
+  if (!rows.length) {
+    setPredictionFeedback("Ingen synlige kamper å fylle ut.", "error");
+    return;
+  }
+  if (deadline && new Date() >= deadline) {
+    setPredictionFeedback("Fristen er utløpt. Disse tipsene kan ikke endres.", "error");
+    return;
+  }
+
+  const hasExistingScores = rows.some((row) =>
+    [...row.querySelectorAll("[data-score]")].some((input) => input.value !== ""),
+  );
+  if (hasExistingScores && !window.confirm("Dette erstatter resultatene som vises nå. Vil du trekke nye tilfeldige tips?")) {
+    return;
+  }
+
+  rows.forEach((row) => {
+    row.querySelector('[data-score="home"]').value = randomScore();
+    row.querySelector('[data-score="away"]').value = randomScore();
+    row.querySelector(".save-prediction").textContent = "Lagre";
+  });
+  setPredictionFeedback(
+    `${rows.length} tilfeldige resultater er fylt inn. Kontroller dem og trykk «Lagre synlige tips».`,
+    "success",
+  );
+}
+
 async function syncWorldCupMatches() {
   const feedback = document.querySelector("#syncFeedback");
   const button = document.querySelector("#syncMatchesButton");
@@ -580,6 +615,8 @@ function updatePredictionToolbar() {
   document.querySelector("#predictionProgress").textContent =
     `${explicitCount} av ${shownMatches.length} kamper lagret${inheritedCount ? ` · ${inheritedCount} arves fra Full VM` : ""}`;
   document.querySelector("#predictionDeadline").textContent = `Frist: ${formatDeadline(deadline)}`;
+  document.querySelector("#randomizeVisibleButton").disabled =
+    !shownMatches.length || Boolean(deadline && new Date() >= deadline);
 }
 
 function renderMatches() {
@@ -1025,6 +1062,7 @@ function bindEvents() {
   });
 
   document.querySelector("#continueTipsButton").addEventListener("click", () => setView("predictions"));
+  document.querySelector("#randomizeVisibleButton").addEventListener("click", randomizeVisiblePredictions);
   document.querySelector("#saveVisibleButton").addEventListener("click", saveVisiblePredictions);
 
   document.querySelector("#matchList").addEventListener("click", (event) => {
