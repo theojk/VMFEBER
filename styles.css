@@ -1594,3 +1594,605 @@ img.flag {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* 2026 visual refresh */
+:root {
+  --bg: #eef1f5;
+  --panel: #ffffff;
+  --ink: #101b2d;
+  --muted: #647087;
+  --line: #dce2eb;
+  --green: #087f5b;
+  --red: #d7193f;
+  --danger-fill: #d7193f;
+  --gold: #e1a91a;
+  --blue: #071f46;
+  --primary-fill: #071f46;
+  --soft-surface: #e9eef6;
+  --soft-text: #213b61;
+  --subtle-surface: #f5f7fa;
+  --shadow: 0 18px 45px rgba(7, 31, 70, 0.1);
+  --shadow-strong: 0 28px 70px rgba(7, 31, 70, 0.2);
+}
+
+html[data-theme="dark"] {
+  --bg: #09111d;
+  --panel: #111d2d;
+  --ink: #f7f9fc;
+  --muted: #aab6c8;
+  --line: #29384d;
+  --green: #55d6a4;
+  --red: #ff5573;
+  --danger-fill: #d7193f;
+  --gold: #f1c453;
+  --blue: #8cb9ff;
+  --primary-fill: #17549e;
+  --soft-surface: #1d314b;
+  --soft-text: #dbe9ff;
+  --subtle-surface: #172538;
+}
+
+body {
+  background:
+    radial-gradient(circle at 90% 4%, rgba(215, 25, 63, 0.1), transparent 25rem),
+    radial-gradient(circle at 30% 100%, rgba(7, 31, 70, 0.1), transparent 32rem),
+    var(--bg);
+}
+
+.app-shell {
+  grid-template-columns: 276px minmax(0, 1fr);
+}
+
+.sidebar {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  height: 100vh;
+  padding: 22px 18px;
+  background:
+    radial-gradient(circle at 10% 5%, rgba(215, 25, 63, 0.22), transparent 16rem),
+    linear-gradient(170deg, #071f46 0%, #06162f 72%, #030b18 100%);
+  border-right: 0;
+  box-shadow: 12px 0 35px rgba(7, 31, 70, 0.14);
+  color: white;
+  overflow-y: auto;
+}
+
+.brand-block {
+  padding: 4px 6px 16px;
+}
+
+.brand-mark {
+  width: 58px;
+  height: 58px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 18px 6px 18px 6px;
+  background: linear-gradient(145deg, #f02c50, #b40729);
+  box-shadow: inset 0 -12px 0 #071f46, 0 12px 25px rgba(0, 0, 0, 0.28);
+  font-size: 1.05rem;
+  transform: rotate(-3deg);
+}
+
+.sidebar h1 {
+  color: white;
+  font-size: 1.18rem;
+  letter-spacing: -0.03em;
+}
+
+.sidebar .eyebrow {
+  color: #ff9caf;
+}
+
+.nav-list {
+  gap: 5px;
+}
+
+.nav-item {
+  min-height: 48px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: #cbd7e8;
+  transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  transform: translateX(3px);
+}
+
+.nav-item.active {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(120deg, #d7193f, #b20b2d);
+  box-shadow: 0 10px 24px rgba(215, 25, 63, 0.28);
+}
+
+.nav-icon,
+.nav-item.active .nav-icon {
+  color: currentColor;
+}
+
+.sidebar .login-panel,
+.sidebar .user-panel {
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.07);
+  color: white;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.sidebar label,
+.sidebar .muted,
+.sidebar .microcopy {
+  color: #b8c6da;
+}
+
+.sidebar input {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(1, 9, 20, 0.55);
+  color: white;
+}
+
+.sidebar .input-row button,
+.sidebar .ghost-button {
+  border-color: #d7193f;
+  background: #d7193f;
+  color: white;
+}
+
+.main-content {
+  width: min(100%, 1580px);
+  padding: 30px clamp(20px, 3.5vw, 58px) 40px;
+}
+
+.topbar {
+  margin-bottom: 26px;
+  padding: 3px 0;
+}
+
+.topbar h2 {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  letter-spacing: -0.055em;
+}
+
+.topbar .eyebrow {
+  color: var(--red);
+  letter-spacing: 0.12em;
+}
+
+.status-strip span {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: 0 6px 18px rgba(7, 31, 70, 0.07);
+}
+
+.hero-band {
+  min-height: min(54vh, 520px);
+  border-radius: 24px 8px 24px 8px;
+  background:
+    linear-gradient(90deg, rgba(2, 12, 29, 0.98) 0%, rgba(7, 31, 70, 0.85) 44%, rgba(7, 31, 70, 0.05) 78%),
+    url("assets/norway-supporters-hero.png") center / cover;
+  box-shadow: var(--shadow-strong);
+}
+
+.hero-band::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 6px;
+  background: linear-gradient(90deg, #d7193f 0 34%, white 34% 42%, #071f46 42% 100%);
+  content: "";
+}
+
+.hero-copy {
+  max-width: 680px;
+}
+
+.hero-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+}
+
+.hero-live-pill span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4768;
+  box-shadow: 0 0 0 5px rgba(255, 71, 104, 0.18);
+}
+
+.hero-band h3 {
+  font-size: clamp(2.25rem, 5vw, 4.65rem);
+  letter-spacing: -0.07em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.hero-band p:not(.eyebrow) {
+  max-width: 560px;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.hero-actions span {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.hero-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  border-radius: 12px 4px 12px 4px;
+  box-shadow: 0 12px 30px rgba(215, 25, 63, 0.34);
+}
+
+.hero-action svg {
+  width: 18px;
+}
+
+.metric-grid {
+  gap: 16px;
+  margin-top: -8px;
+}
+
+.metric {
+  min-height: 126px;
+  border: 0;
+  border-radius: 18px 6px 18px 6px;
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+
+.metric::before {
+  inset: 0 0 auto;
+  width: auto;
+  height: 5px;
+  background: linear-gradient(90deg, var(--red), var(--gold));
+}
+
+.metric:nth-child(2)::before {
+  background: linear-gradient(90deg, var(--blue), #4d8fe7);
+}
+
+.metric:nth-child(3)::before {
+  background: linear-gradient(90deg, var(--green), #5fc99c);
+}
+
+.metric-value {
+  font-size: clamp(2.15rem, 4vw, 3rem);
+  letter-spacing: -0.07em;
+}
+
+.metric-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.section-heading h3,
+.knockout-heading h3 {
+  font-size: clamp(1.35rem, 2.2vw, 1.85rem);
+  letter-spacing: -0.04em;
+}
+
+.prediction-toolbar {
+  top: 12px;
+  border: 1px solid rgba(7, 31, 70, 0.12);
+  border-radius: 16px 5px 16px 5px;
+  padding: 14px 16px;
+  box-shadow: 0 15px 35px rgba(7, 31, 70, 0.13);
+}
+
+.prediction-toolbar button,
+.save-prediction {
+  border-radius: 10px 4px 10px 4px;
+}
+
+.match-day {
+  margin: 26px 0 8px;
+  color: var(--ink);
+  font-size: 1.18rem;
+  letter-spacing: -0.035em;
+}
+
+.match-day::before {
+  display: inline-block;
+  width: 24px;
+  height: 4px;
+  margin-right: 9px;
+  border-radius: 4px;
+  background: var(--red);
+  vertical-align: middle;
+  content: "";
+}
+
+.match-row {
+  position: relative;
+  overflow: hidden;
+  min-height: 92px;
+  border: 0;
+  border-radius: 16px 5px 16px 5px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(7, 31, 70, 0.08);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.match-row::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(var(--red), var(--blue));
+  content: "";
+}
+
+.match-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(7, 31, 70, 0.13);
+}
+
+.score-inputs input {
+  min-height: 52px;
+  border: 2px solid var(--line);
+  border-radius: 12px 4px 12px 4px;
+  background: var(--subtle-surface);
+  font-size: 1.25rem;
+}
+
+.score-inputs input:focus {
+  border-color: var(--red);
+  background: var(--panel);
+}
+
+.flag {
+  width: 34px;
+  height: 24px;
+  border-radius: 5px;
+  box-shadow: 0 3px 8px rgba(7, 31, 70, 0.18);
+}
+
+.match-stage-label {
+  border-radius: 999px;
+  padding: 0 9px;
+  font-size: 0.67rem;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.group-table-card,
+.third-place-panel,
+.knockout-match,
+.league-card,
+.league-join,
+.settings-panel,
+.admin-panel,
+.member-predictions {
+  border: 0;
+  border-radius: 16px 5px 16px 5px;
+  box-shadow: 0 8px 25px rgba(7, 31, 70, 0.08);
+}
+
+.group-table-card h4,
+.third-place-panel h4 {
+  background: linear-gradient(100deg, var(--primary-fill), #173e72);
+  color: white;
+}
+
+.knockout-round {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px 6px 18px 6px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.knockout-match {
+  border-top: 4px solid var(--gold);
+}
+
+.league-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 170px;
+  padding: 20px;
+}
+
+.league-card::after {
+  position: absolute;
+  right: -30px;
+  bottom: -54px;
+  width: 120px;
+  height: 120px;
+  border: 18px solid var(--soft-surface);
+  border-radius: 50%;
+  content: "";
+}
+
+.leader-row {
+  min-height: 72px;
+  border: 0;
+  border-radius: 14px 4px 14px 4px;
+  box-shadow: 0 6px 18px rgba(7, 31, 70, 0.07);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.leader-row:hover {
+  transform: translateX(4px);
+  box-shadow: 0 12px 25px rgba(7, 31, 70, 0.12);
+}
+
+.leader-row:nth-child(1) .rank {
+  background: linear-gradient(145deg, #f5d56b, #d49b13);
+  color: #4d3500;
+}
+
+.leader-row:nth-child(2) .rank {
+  background: linear-gradient(145deg, #edf1f6, #aeb8c7);
+  color: #364052;
+}
+
+.leader-row:nth-child(3) .rank {
+  background: linear-gradient(145deg, #e6b386, #a96939);
+  color: #472711;
+}
+
+.rank {
+  border-radius: 12px 4px 12px 4px;
+}
+
+.points {
+  min-width: 64px;
+  color: var(--ink);
+  font-size: 1.35rem;
+  text-align: right;
+}
+
+.points::after {
+  display: block;
+  color: var(--muted);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  content: "POENG";
+}
+
+html[data-theme="dark"] .knockout-round {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+html[data-theme="dark"] .sidebar {
+  background:
+    radial-gradient(circle at 10% 5%, rgba(215, 25, 63, 0.22), transparent 16rem),
+    linear-gradient(170deg, #071f46 0%, #06162f 72%, #030b18 100%);
+}
+
+@media (max-width: 980px) {
+  .sidebar {
+    height: auto;
+  }
+
+  .main-content {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .main-content {
+    padding: 16px 12px 28px;
+  }
+
+  .sidebar {
+    background:
+      radial-gradient(circle at 10% 5%, rgba(215, 25, 63, 0.22), transparent 16rem),
+      linear-gradient(170deg, #071f46 0%, #06162f 72%, #030b18 100%);
+  }
+
+  .mobile-menu-button,
+  .mobile-menu-close {
+    border-color: var(--line);
+    border-radius: 12px 4px 12px 4px;
+  }
+
+  .mobile-menu-close {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+  }
+
+  .topbar {
+    margin-bottom: 16px;
+  }
+
+  .hero-band {
+    min-height: 470px;
+    border-radius: 18px 5px 18px 5px;
+    padding: 20px;
+    background:
+      linear-gradient(0deg, rgba(2, 12, 29, 0.98) 0%, rgba(7, 31, 70, 0.68) 65%, rgba(7, 31, 70, 0.1) 100%),
+      url("assets/norway-supporters-hero.png") 68% center / cover;
+  }
+
+  .hero-band h3 {
+    font-size: 2.65rem;
+  }
+
+  .hero-actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hero-action {
+    justify-content: center;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .metric {
+    min-height: 100px;
+    padding: 14px 10px;
+  }
+
+  .metric-value {
+    font-size: 1.65rem;
+  }
+
+  .metric-label {
+    font-size: 0.58rem;
+  }
+
+  .match-row {
+    min-height: 150px;
+    padding: 14px 10px;
+  }
+
+  .match-row > .team {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .match-row > .team:nth-child(3) {
+    align-items: flex-end;
+  }
+
+  .score-inputs input {
+    min-height: 50px;
+    padding: 0 4px;
+  }
+
+  .deadline {
+    font-size: 0.72rem;
+  }
+
+  .league-card,
+  .league-join,
+  .member-predictions {
+    padding: 16px;
+  }
+
+  .leader-row {
+    padding: 12px 10px;
+  }
+}

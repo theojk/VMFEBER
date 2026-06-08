@@ -2,6 +2,14 @@
 
 ## Forbedret
 
+- Brukerflaten har fått et nytt turneringsstudio-uttrykk med sterkere norsk
+  identitet, mørk stadionnavigasjon og tydeligere visuelt hierarki.
+- Oversikten har fått en mer engasjerende hovedflate, kraftigere statuskort og
+  tydeligere handlingsknapp.
+- Kampkort, resultatfelt, sluttspill, ligaer og poengtavler har fått mer
+  særpreg og bedre lesbarhet.
+- Mobilvisningen har fått kompaktere statuskort og tydeligere kampkort uten å
+  endre tipsflyten.
 - De åtte beste projiserte tredjeplassene får nå hver sin eksakte
   16-delsfinale.
 - Fordelingen bruker alle de 495 offisielle kombinasjonene fra Annex C i

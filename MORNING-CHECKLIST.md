@@ -41,20 +41,22 @@ synkroniseringen lagrer ordinær tid separat fra ekstraomganger og straffespark.
 
 1. Åpne `https://vmfeber.vercel.app` på mobil.
 2. Velg mørk modus og kontroller at datoer og knapper er tydelige.
-3. Velg Full VM.
-4. Fyll alle seks kampene i én gruppe og kontroller at lag går inn i
+3. Kontroller at stadionnavigasjonen, hovedbildet og de tre statuskortene er
+   tydelige uten horisontal rulling.
+4. Velg Full VM.
+5. Fyll alle seks kampene i én gruppe og kontroller at lag går inn i
    16-delsfinalen.
-5. Fyll alle gruppespillkampene og kontroller at hver av de åtte beste
+6. Fyll alle gruppespillkampene og kontroller at hver av de åtte beste
    tredjeplassene får én bestemt 16-delsfinale, uten kandidatlisten med flere
    lag.
-6. Tipp en sluttspillkamp uavgjort.
-7. Kontroller at ekstraomganger vises.
-8. Tipp også ekstraomgangene uavgjort og kontroller at straffespark vises.
-9. Velg en straffevinner og kontroller at laget føres videre.
-10. Lagre tipset, last siden på nytt og kontroller at alle feltene er bevart.
-11. Åpne en poengtavle og klikk på et ligamedlem.
-12. Kontroller at Full VM-tips er sperret før samlet frist.
-13. Kontroller at Daglig-tips for en valgt dato er sperret før kl. 12:00 norsk
+7. Tipp en sluttspillkamp uavgjort.
+8. Kontroller at ekstraomganger vises.
+9. Tipp også ekstraomgangene uavgjort og kontroller at straffespark vises.
+10. Velg en straffevinner og kontroller at laget føres videre.
+11. Lagre tipset, last siden på nytt og kontroller at alle feltene er bevart.
+12. Åpne en poengtavle og klikk på et ligamedlem.
+13. Kontroller at Full VM-tips er sperret før samlet frist.
+14. Kontroller at Daglig-tips for en valgt dato er sperret før kl. 12:00 norsk
     tid og synlig etter fristen.
 
 Merk: poengberegningen bruker foreløpig stillingen etter 90 minutter.

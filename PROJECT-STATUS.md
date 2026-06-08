@@ -30,7 +30,8 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
 - Projisert sluttspill som følger brukerens tips og FIFAs offisielle Annex C-
   fordeling av de åtte beste tredjeplassene.
 - Sluttspilltips med ordinær tid, ekstraomganger og straffespark.
-- Mobilmeny, mørk modus og valgfri flytende gruppetabell på desktop.
+- Turneringsstudio-inspirert brukerflate med mobilmeny, mørk modus og valgfri
+  flytende gruppetabell på desktop.
 
 ## Viktige begrensninger
 
