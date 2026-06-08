@@ -1,0 +1,23 @@
+# Sluttspillfordeling 8. juni 2026
+
+## Forbedret
+
+- De åtte beste projiserte tredjeplassene får nå hver sin eksakte
+  16-delsfinale.
+- Fordelingen bruker alle de 495 offisielle kombinasjonene fra Annex C i
+  reglementet for FIFA World Cup 2026.
+- Projiserte vinnere kan dermed føres videre gjennom et reelt sluttspill uten
+  kandidatlisten med flere mulige tredjeplasser.
+
+## Begrensning
+
+- Dersom projiserte tredjeplasser er helt like på poeng, målforskjell og
+  scorede mål, bruker appen grupperekkefølge som stabil simulert avgjørelse.
+  Kortpoeng og historisk FIFA-ranking kan ikke utledes fra brukernes tips.
+
+## Verifisering
+
+- Alle 495 kombinasjoner er kontrollert.
+- Hver kombinasjon bruker åtte forskjellige kvalifiserte grupper.
+- Hver tredjeplass er kontrollert mot de tillatte motstanderne i kampoppsettet.
+- JavaScript-syntaks er kontrollert.

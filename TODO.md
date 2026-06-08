@@ -53,7 +53,7 @@
   - Bytt gruppeplasseringene til projiserte lagnavn og behold kvalifiseringsveien
     når gruppetipsene er komplette.
 
-- [ ] Implementer FIFAs kombinasjonstabell for å plassere de åtte beste
+- [x] Implementer FIFAs kombinasjonstabell for å plassere de åtte beste
   tredjeplassene eksakt i 16-delsfinalene.
 
 - [x] Avgjør uavgjorte sluttspilltips med ekstraomganger og eventuelle

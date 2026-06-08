@@ -980,7 +980,7 @@ const knockoutRounds = [
   { title: "Bronsefinale og finale", matches: [[103, "T101", "T102"], [104, "V101", "V102"]] },
 ];
 
-function knockoutSlot(origin, standingsByGroup, qualifyingThirds) {
+function knockoutSlot(origin, standingsByGroup, qualifyingThirds, thirdAssignments, opposingOrigin) {
   if (/^[12][A-L]$/.test(origin)) {
     const position = Number(origin[0]) - 1;
     const groupLetter = origin[1];
@@ -994,6 +994,15 @@ function knockoutSlot(origin, standingsByGroup, qualifyingThirds) {
   }
 
   if (origin.startsWith("3")) {
+    const assignedTeam = thirdAssignments.get(opposingOrigin);
+    if (assignedTeam) {
+      return {
+        name: assignedTeam.name,
+        crest: assignedTeam.crest,
+        origin: `3. plass i gruppe ${assignedTeam.groupLetter}`,
+      };
+    }
+
     const eligibleLetters = origin.slice(1).split("/");
     const candidates = qualifyingThirds.filter((team) => eligibleLetters.includes(team.groupLetter));
     return {
@@ -1026,17 +1035,38 @@ function qualifyingProjectedThirds(standingsByGroup) {
   return standingsByGroup
     .filter((group) => group.rows[2]?.played === 3)
     .map((group) => ({ ...group.rows[2], groupLetter: group.label.slice(-1) }))
-    .sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor)
+    .sort((a, b) => b.points - a.points
+      || b.goalDifference - a.goalDifference
+      || b.goalsFor - a.goalsFor
+      || a.groupLetter.localeCompare(b.groupLetter))
     .slice(0, 8);
+}
+
+function projectedThirdPlaceAssignments(qualifyingThirds) {
+  if (qualifyingThirds.length !== 8) return new Map();
+
+  const combinationKey = qualifyingThirds
+    .map((team) => team.groupLetter)
+    .sort()
+    .join("");
+  const assignment = window.VM_FEBER_THIRD_PLACE_COMBINATIONS?.[combinationKey];
+  if (!assignment) return new Map();
+
+  const winnerSlots = ["1A", "1B", "1D", "1E", "1G", "1I", "1K", "1L"];
+  return new Map(winnerSlots.map((winnerSlot, index) => [
+    winnerSlot,
+    qualifyingThirds.find((team) => team.groupLetter === assignment[index]),
+  ]));
 }
 
 function buildProjectedKnockoutMatchups(standingsByGroup = projectedStandingsByGroup()) {
   const qualifyingThirds = qualifyingProjectedThirds(standingsByGroup);
+  const thirdAssignments = projectedThirdPlaceAssignments(qualifyingThirds);
   const matchups = new Map();
 
-  const resolveOrigin = (origin) => {
+  const resolveOrigin = (origin, opposingOrigin) => {
     if (!/^[VT]\d+$/.test(origin)) {
-      return knockoutSlot(origin, standingsByGroup, qualifyingThirds);
+      return knockoutSlot(origin, standingsByGroup, qualifyingThirds, thirdAssignments, opposingOrigin);
     }
 
     const sourceNumber = Number(origin.slice(1));
@@ -1044,7 +1074,7 @@ function buildProjectedKnockoutMatchups(standingsByGroup = projectedStandingsByG
     const sourceMatch = matches.find((match) => match.number === sourceNumber);
     const winnerSide = sourceMatch ? projectedWinnerSide(sourceMatch) : null;
     if (!sourceMatchup || !winnerSide) {
-      return knockoutSlot(origin, standingsByGroup, qualifyingThirds);
+      return knockoutSlot(origin, standingsByGroup, qualifyingThirds, thirdAssignments, opposingOrigin);
     }
 
     const selectedSide = origin.startsWith("V")
@@ -1060,8 +1090,8 @@ function buildProjectedKnockoutMatchups(standingsByGroup = projectedStandingsByG
   knockoutRounds.forEach((round) => {
     round.matches.forEach(([number, homeOrigin, awayOrigin]) => {
       matchups.set(number, {
-        home: resolveOrigin(homeOrigin),
-        away: resolveOrigin(awayOrigin),
+        home: resolveOrigin(homeOrigin, awayOrigin),
+        away: resolveOrigin(awayOrigin, homeOrigin),
       });
     });
   });

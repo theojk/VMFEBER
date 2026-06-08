@@ -1,6 +1,6 @@
 # VM FEBER - prosjektstatus
 
-Sist oppdatert: 7. juni 2026.
+Sist oppdatert: 8. juni 2026.
 
 ## Produksjon
 
@@ -26,14 +26,16 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
 - Automatisk kamp- og resultatsynkronisering.
 - Automatiske tipsbackuper og backup-e-post.
 - Projiserte tabeller for alle 12 grupper og rangering av tredjeplasser.
-- Projisert sluttspill som følger brukerens tips.
+- Projisert sluttspill som følger brukerens tips og FIFAs offisielle Annex C-
+  fordeling av de åtte beste tredjeplassene.
 - Sluttspilltips med ordinær tid, ekstraomganger og straffespark.
 - Mobilmeny, mørk modus og valgfri flytende gruppetabell på desktop.
 
 ## Viktige begrensninger
 
-- Den eksakte fordelingen av de åtte beste tredjeplassene krever FIFAs
-  kombinasjonstabell. Appen viser foreløpig mulige kandidater.
+- Ved helt lik poengsum, målforskjell og antall scorede mål mellom projiserte
+  tredjeplasser bruker appen grupperekkefølge som stabil simulert avgjørelse.
+  Tipsene inneholder ikke kortpoeng eller historisk FIFA-ranking.
 - Bonusfeltene for verdensmester, finalist, toppscorer og gruppevinnere er
   foreløpig kun en visuell skisse og lagres ikke.
 - Visning av andre brukeres tips etter fristen står fortsatt på TODO-listen.
@@ -60,4 +62,3 @@ separat i Supabase. GitHub/Vercel deployerer dem ikke automatisk.
 2. Implementer trygg visning av andre brukeres tips etter fristen.
 3. Bestem og implementer endelige bonusspørsmål og bonuspoeng.
 4. Legg inn norsk TV-kanal manuelt eller via en godkjent datakilde.
-5. Implementer FIFAs kombinasjonstabell for eksakt plassering av tredjeplasser.

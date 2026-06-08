@@ -17,7 +17,8 @@ Se [PROJECT-STATUS.md](PROJECT-STATUS.md) for prosjektstatus,
 - Poengtavler som bare vises for ligaer brukeren er medlem av
 - Autooppdaterte projiserte tabeller for alle 12 VM-grupper og tredjeplasser
 - Valgfri flytende live-tabell på desktop som følger kampen brukeren tipper på
-- Rundeetiketter på kampene og projisert sluttspill med kvalifiseringsvei
+- Rundeetiketter og projisert sluttspill med FIFAs offisielle Annex C-fordeling
+  av de åtte beste tredjeplassene
 - Sluttspilltips med ekstraomganger og straffespark ved uavgjort
 - Adminverktøy for invitasjoner, brukere, testbrukere og resultatsynkronisering
 

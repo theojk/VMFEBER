@@ -12,6 +12,7 @@ sletter ikke eksisterende tips.
 Last opp alle endrede prosjektfiler. De viktigste er:
 
 - `app.js`
+- `third-place-combinations.js`
 - `styles.css`
 - `index.html`
 - `supabase-schema.sql`
@@ -41,11 +42,14 @@ synkroniseringen lagrer ordinær tid separat fra ekstraomganger og straffespark.
 3. Velg Full VM.
 4. Fyll alle seks kampene i én gruppe og kontroller at lag går inn i
    16-delsfinalen.
-5. Tipp en sluttspillkamp uavgjort.
-6. Kontroller at ekstraomganger vises.
-7. Tipp også ekstraomgangene uavgjort og kontroller at straffespark vises.
-8. Velg en straffevinner og kontroller at laget føres videre.
-9. Lagre tipset, last siden på nytt og kontroller at alle feltene er bevart.
+5. Fyll alle gruppespillkampene og kontroller at hver av de åtte beste
+   tredjeplassene får én bestemt 16-delsfinale, uten kandidatlisten med flere
+   lag.
+6. Tipp en sluttspillkamp uavgjort.
+7. Kontroller at ekstraomganger vises.
+8. Tipp også ekstraomgangene uavgjort og kontroller at straffespark vises.
+9. Velg en straffevinner og kontroller at laget føres videre.
+10. Lagre tipset, last siden på nytt og kontroller at alle feltene er bevart.
 
 Merk: poengberegningen bruker foreløpig stillingen etter 90 minutter.
 Bestem senere om riktig lag videre også skal gi egne sluttspillpoeng.
