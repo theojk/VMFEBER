@@ -63,6 +63,14 @@ button {
   cursor: pointer;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -796,9 +804,9 @@ select {
 .live-group-header button {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -1091,8 +1099,23 @@ img.flag {
   font-weight: 800;
 }
 
+.tiebreak-score-group,
 .knockout-tiebreak .score-inputs {
   width: 150px;
+}
+
+.tiebreak-labels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 3px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.tiebreak-labels small {
+  font-size: 0.66rem;
+  font-weight: 750;
 }
 
 .penalty-tiebreak {
@@ -1103,7 +1126,7 @@ img.flag {
 }
 
 .save-prediction {
-  min-height: 40px;
+  min-height: 44px;
   border: 1px solid var(--ink);
   border-radius: 8px;
   background: var(--primary-fill);
@@ -1169,7 +1192,7 @@ img.flag {
 }
 
 .league-card button {
-  min-height: 38px;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--subtle-surface);
@@ -1436,6 +1459,7 @@ img.flag {
     margin-left: 0;
   }
 
+  .tiebreak-score-group,
   .knockout-tiebreak .score-inputs {
     width: 100%;
   }
@@ -1483,5 +1507,14 @@ img.flag {
   .admin-user-actions {
     grid-column: auto;
     display: grid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

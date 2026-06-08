@@ -21,6 +21,13 @@
 
 ## Poengtavler og tipsinnsyn
 
+- [ ] Bestem endelig poengregel for sluttspill.
+  - Ordinært kampresultat sammenlignes nå med stillingen etter 90 minutter.
+  - Avklar om riktig lag videre etter ekstraomganger eller straffespark også
+    skal gi egne poeng.
+  - Avklar om korrekt resultat etter 120 minutter eller straffespark skal gi
+    bonuspoeng.
+
 - [ ] La ligamedlemmer klikke på en bruker i poengtavlen for å se brukerens tips
   og opptjente poeng.
   - Vis kun tips til andre brukere etter at fristen for den relevante
@@ -45,6 +52,9 @@
   - Vis hvilke gruppeplasseringer som går inn i hver sluttspillkamp.
   - Bytt gruppeplasseringene til projiserte lagnavn og behold kvalifiseringsveien
     når gruppetipsene er komplette.
+
+- [ ] Implementer FIFAs kombinasjonstabell for å plassere de åtte beste
+  tredjeplassene eksakt i 16-delsfinalene.
 
 - [x] Avgjør uavgjorte sluttspilltips med ekstraomganger og eventuelle
   straffespark, slik at projisert vinner kan føres videre.

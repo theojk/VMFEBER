@@ -6,6 +6,12 @@ alter table public.match_predictions
   add column if not exists penalty_home_score integer check (penalty_home_score >= 0),
   add column if not exists penalty_away_score integer check (penalty_away_score >= 0);
 
+alter table public.matches
+  add column if not exists extra_time_home_score integer,
+  add column if not exists extra_time_away_score integer,
+  add column if not exists penalty_home_score integer,
+  add column if not exists penalty_away_score integer;
+
 drop function if exists public.save_match_prediction(text, uuid, integer, integer);
 
 create or replace function public.save_match_prediction(
@@ -34,8 +40,24 @@ begin
     raise exception 'Du ma vaere innlogget for a lagre tips.';
   end if;
 
+  insert into public.profiles (id, username, email, registration_source)
+  select
+    auth_user.id,
+    public.profile_username_for_user(auth_user.id, auth_user.email, auth_user.raw_user_meta_data ->> 'username'),
+    auth_user.email,
+    'open'
+  from auth.users auth_user
+  where auth_user.id = auth.uid()
+  on conflict (id) do nothing;
+
   if predicted_home_score < 0 or predicted_away_score < 0 then
     raise exception 'Resultatet kan ikke inneholde negative tall.';
+  end if;
+  if coalesce(predicted_extra_time_home_score, 0) < 0
+     or coalesce(predicted_extra_time_away_score, 0) < 0
+     or coalesce(predicted_penalty_home_score, 0) < 0
+     or coalesce(predicted_penalty_away_score, 0) < 0 then
+    raise exception 'Sluttspillresultatet kan ikke inneholde negative tall.';
   end if;
 
   select * into selected_competition
@@ -55,6 +77,10 @@ begin
   if is_knockout and predicted_home_score = predicted_away_score then
     if predicted_extra_time_home_score is null or predicted_extra_time_away_score is null then
       raise exception 'Uavgjort sluttspilltips ma avgjores etter ekstraomganger.';
+    end if;
+    if predicted_extra_time_home_score < predicted_home_score
+       or predicted_extra_time_away_score < predicted_away_score then
+      raise exception 'Stillingen etter 120 minutter kan ikke vaere lavere enn etter ordinaer tid.';
     end if;
     if predicted_extra_time_home_score = predicted_extra_time_away_score
        and (

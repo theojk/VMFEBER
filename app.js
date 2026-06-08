@@ -303,6 +303,10 @@ async function savePrediction(matchId) {
       setPredictionFeedback("Uavgjort sluttspilltips må avgjøres etter ekstraomganger.", "error");
       return false;
     }
+    if (Number(extraHomeScore) < Number(homeScore) || Number(extraAwayScore) < Number(awayScore)) {
+      setPredictionFeedback("Stillingen etter 120 minutter kan ikke være lavere enn etter ordinær tid.", "error");
+      return false;
+    }
     if (Number(extraHomeScore) === Number(extraAwayScore)
       && (penaltyHomeScore === "" || penaltyAwayScore === "" || Number(penaltyHomeScore) === Number(penaltyAwayScore))) {
       setPredictionFeedback("Velg en vinner med et ulikt straffesparkresultat.", "error");
@@ -356,12 +360,19 @@ async function saveVisiblePredictions() {
   button.disabled = true;
   button.textContent = "Lagrer...";
   let savedCount = 0;
+  let failedCount = 0;
   for (const row of rows) {
     if (await savePrediction(row.dataset.matchId)) savedCount += 1;
+    else failedCount += 1;
   }
   button.disabled = false;
   button.textContent = "Lagre synlige tips";
-  setPredictionFeedback(`${savedCount} tips ble lagret.`, "success");
+  setPredictionFeedback(
+    failedCount
+      ? `${savedCount} tips ble lagret. ${failedCount} tips mangler en gyldig sluttspillavgjørelse.`
+      : `${savedCount} tips ble lagret.`,
+    failedCount ? "error" : "success",
+  );
 }
 
 function randomScore() {
@@ -394,8 +405,8 @@ function randomizeVisiblePredictions() {
     row.querySelector('[data-score="home"]').value = home;
     row.querySelector('[data-score="away"]').value = away;
     if (row.querySelector("[data-tiebreak]") && home === away) {
-      const extraHome = randomScore();
-      const extraAway = randomScore();
+      const extraHome = home + Math.floor(Math.random() * 3);
+      const extraAway = away + Math.floor(Math.random() * 3);
       row.querySelector('[data-extra-score="home"]').value = extraHome;
       row.querySelector('[data-extra-score="away"]').value = extraAway;
       if (extraHome === extraAway) {
@@ -760,16 +771,22 @@ function knockoutTiebreakFields(match, prediction) {
   if (!isKnockoutMatch(match)) return "";
   return `
     <div class="knockout-tiebreak hidden" data-tiebreak>
-      <span>Etter ekstraomganger</span>
-      <div class="score-inputs">
-        <input type="number" min="0" data-extra-score="home" value="${prediction?.extra_time_home_score ?? ""}" aria-label="Hjemmelag etter ekstraomganger" />
-        <input type="number" min="0" data-extra-score="away" value="${prediction?.extra_time_away_score ?? ""}" aria-label="Bortelag etter ekstraomganger" />
+      <span>Stilling etter 120 min</span>
+      <div class="tiebreak-score-group">
+        <div class="tiebreak-labels"><small>Hjemme</small><small>Borte</small></div>
+        <div class="score-inputs">
+          <input type="number" min="0" data-extra-score="home" value="${prediction?.extra_time_home_score ?? ""}" aria-label="Hjemmelag etter ekstraomganger" />
+          <input type="number" min="0" data-extra-score="away" value="${prediction?.extra_time_away_score ?? ""}" aria-label="Bortelag etter ekstraomganger" />
+        </div>
       </div>
       <div class="penalty-tiebreak hidden" data-penalty-tiebreak>
         <span>Etter straffespark</span>
-        <div class="score-inputs">
-          <input type="number" min="0" data-penalty-score="home" value="${prediction?.penalty_home_score ?? ""}" aria-label="Hjemmelag straffespark" />
-          <input type="number" min="0" data-penalty-score="away" value="${prediction?.penalty_away_score ?? ""}" aria-label="Bortelag straffespark" />
+        <div class="tiebreak-score-group">
+          <div class="tiebreak-labels"><small>Hjemme</small><small>Borte</small></div>
+          <div class="score-inputs">
+            <input type="number" min="0" data-penalty-score="home" value="${prediction?.penalty_home_score ?? ""}" aria-label="Hjemmelag straffespark" />
+            <input type="number" min="0" data-penalty-score="away" value="${prediction?.penalty_away_score ?? ""}" aria-label="Bortelag straffespark" />
+          </div>
         </div>
       </div>
     </div>

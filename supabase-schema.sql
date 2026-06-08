@@ -63,6 +63,10 @@ create table if not exists public.matches (
   kickoff_at timestamptz not null,
   home_score integer,
   away_score integer,
+  extra_time_home_score integer,
+  extra_time_away_score integer,
+  penalty_home_score integer,
+  penalty_away_score integer,
   status text not null default 'scheduled' check (status in ('scheduled', 'live', 'finished')),
   created_at timestamptz not null default now()
 );

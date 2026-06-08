@@ -1,13 +1,15 @@
 # VM FEBER
 
-Første lokale prototype for en norsk VM-tippeside.
+Norsk, mobilvennlig VM-tippeside publisert med Vercel og Supabase.
 
-Se [TODO.md](TODO.md) for planlagte forbedringer og undersokte integrasjoner.
+Se [PROJECT-STATUS.md](PROJECT-STATUS.md) for prosjektstatus,
+[MORNING-CHECKLIST.md](MORNING-CHECKLIST.md) for neste utrulling og
+[TODO.md](TODO.md) for planlagte forbedringer.
 
 ## Hva som finnes nå
 
 - Mobilvennlig webapp som kan åpnes direkte i nettleser
-- Demo av magic-link-innlogging
+- Magic-link-innlogging med Supabase
 - To konkurranseformer:
   - Full VM-konkurranse med samlet frist før turneringsstart
   - Daglig konkurranse med frist kl. 12:00 norsk tid
@@ -17,14 +19,14 @@ Se [TODO.md](TODO.md) for planlagte forbedringer og undersokte integrasjoner.
 - Valgfri flytende live-tabell på desktop som følger kampen brukeren tipper på
 - Rundeetiketter på kampene og projisert sluttspill med kvalifiseringsvei
 - Sluttspilltips med ekstraomganger og straffespark ved uavgjort
-- Enkel adminskisse for invitasjoner og resultater
+- Adminverktøy for invitasjoner, brukere, testbrukere og resultatsynkronisering
 
 ## Neste naturlige steg
 
-1. Koble på Supabase for ekte magic-link-login.
-2. Lage database for brukere, ligaer, kamper, tips, resultater og poeng.
-3. Bestemme endelige poengregler.
-4. Publisere på Vercel med gratis nettadresse.
+1. Test sluttspilltips med ekstraomganger og straffespark i produksjon.
+2. La ligamedlemmer se andres tips etter relevant frist.
+3. Bestem og implementer endelige bonusspørsmål og bonuspoeng.
+4. Legg inn norske TV-kanaler.
 
 ## Lokal bruk
 
@@ -110,6 +112,11 @@ adminomradet. Testbrukerne kan fa tilfeldige Full VM- og Daglig-tips, men
 holdes helt utenfor ekte ligaer, poengtavler og backuper.
 Deploy deretter den oppdaterte `sync-world-cup` Edge Function-koden, slik at
 testbrukernes poeng ogsa beregnes etter kampdatasynkronisering.
+
+Kjør `supabase-knockout-predictions-setup.sql` for å lagre sluttspilltips med
+ordinær tid, ekstraomganger og straffespark. Deploy deretter både
+`sync-world-cup` og `create-prediction-backup` på nytt. Synkroniseringen lagrer
+ordinær tid separat slik at sluttspillkamper kan poengberegnes riktig.
 
 ## Ligaer og poengtavler
 
