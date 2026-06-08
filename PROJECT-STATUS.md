@@ -19,10 +19,13 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
 - Full VM og Daglig tipping med serverstyrte frister.
 - Daglige tips arves fra Full VM dersom brukeren ikke leverer egne tips.
 - Offentlige og private ligaer med delbar kode.
+- Valgfri beskrivelse på ligaer.
 - Full VM-, Daglig total- og Daglig per dato-poengtavler.
 - Sikkert tipsinnsyn mellom ligamedlemmer etter relevant frist.
 - E-postsamtykke ved registrering og tydelig informasjon om sletting etter VM.
 - Invitasjonskoder og adminoversikt.
+- Privat adminstatistikk for brukere, tips, ligaer og ligadeltakelse.
+- Synlig tilbakemeldingsadresse i bunnteksten.
 - Testbrukerstøtte er skrevet, men databaseoppsettet bør verifiseres i
   produksjon før funksjonen regnes som ferdig utrullet.
 - Automatisk kamp- og resultatsynkronisering.

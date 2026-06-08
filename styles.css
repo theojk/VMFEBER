@@ -55,7 +55,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -66,6 +67,7 @@ button {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
+textarea:focus-visible,
 a:focus-visible {
   outline: 3px solid var(--blue);
   outline-offset: 3px;
@@ -323,6 +325,10 @@ h4 {
   color: var(--blue);
 }
 
+.footer-links strong {
+  margin-bottom: 3px;
+}
+
 html[data-theme="dark"] .sidebar,
 html[data-theme="dark"] .prediction-toolbar {
   background: rgba(24, 31, 41, 0.94);
@@ -397,7 +403,8 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--line);
@@ -405,6 +412,13 @@ select {
   padding: 0 12px;
   background: #fbfcfa;
   color: var(--ink);
+}
+
+textarea {
+  min-height: 86px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  resize: vertical;
 }
 
 .login-panel input:not(:last-child) {
@@ -935,6 +949,15 @@ select {
   color: var(--muted);
 }
 
+.league-description {
+  position: relative;
+  z-index: 1;
+  min-height: 2.8em;
+  color: var(--ink) !important;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
 .rule-row,
 .leader-row,
 .invite-row,
@@ -1214,6 +1237,83 @@ img.flag {
 .admin-panel button:disabled {
   cursor: wait;
   opacity: 0.55;
+}
+
+.admin-statistics-panel {
+  margin-bottom: 20px;
+  border-radius: 20px 6px 20px 6px;
+  padding: 20px;
+  background: linear-gradient(145deg, #071f46, #123c76);
+  color: white;
+  box-shadow: var(--shadow-strong);
+}
+
+.admin-statistics-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.admin-statistics-heading h4 {
+  margin-bottom: 0;
+  color: white;
+  font-size: 1.35rem;
+}
+
+.admin-statistics-heading .eyebrow {
+  color: #ff9caf;
+}
+
+.admin-statistics-heading > span {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.72rem;
+}
+
+.admin-statistics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-statistics-grid article {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px 4px 14px 4px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-statistics-grid span,
+.admin-statistics-grid small,
+.admin-statistics-detail {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.admin-statistics-grid span {
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.admin-statistics-grid strong {
+  color: white;
+  font-size: 2.2rem;
+  letter-spacing: -0.06em;
+}
+
+.admin-statistics-grid small {
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.admin-statistics-detail {
+  margin-top: 12px;
+  font-size: 0.75rem;
 }
 
 .leader-row {
@@ -2326,6 +2426,10 @@ html[data-theme="dark"] .sidebar {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .admin-statistics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
 }
 
 @media (max-width: 700px) {
@@ -2498,6 +2602,14 @@ html[data-theme="dark"] .sidebar {
   }
 
   .bonus-save-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-statistics-heading {
+    flex-direction: column;
+  }
+
+  .admin-statistics-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -13,11 +13,12 @@ Se [PROJECT-STATUS.md](PROJECT-STATUS.md) for prosjektstatus,
 - To konkurranseformer:
   - Full VM-konkurranse med samlet frist før turneringsstart
   - Daglig konkurranse med frist kl. 12:00 norsk tid
-- Private ligaer med kode
+- Private og offentlige ligaer med kode, beskrivelse og eierstyrt redigering
 - Poengtavler som bare vises for ligaer brukeren er medlem av
 - Klikkbart tipsinnsyn mellom ligamedlemmer etter relevant frist
 - Regelfane som forklarer Full VM, Daglig og de separate poengtavlene
 - Lagret toppscorertips og eksplisitt samtykke til konkurranserelatert e-post
+- Privat adminstatistikk for påmeldinger, tips, ligaer og ligadeltakelse
 - Autooppdaterte projiserte tabeller for alle 12 VM-grupper og tredjeplasser
 - Valgfri flytende live-tabell på desktop som følger kampen brukeren tipper på
 - Rundeetiketter og projisert sluttspill med FIFAs offisielle Annex C-fordeling
@@ -140,6 +141,13 @@ ligamedlemskap og frist før tipsene returneres.
 Kjør `supabase-consent-and-top-scorer-setup.sql` for lagret toppscorertips og
 e-postsamtykke. Det må i tillegg etableres en testet driftsprosedyre som
 fjerner eller anonymiserer alle e-postadresser senest 26. juli 2026.
+
+Kjør `supabase-admin-statistics-setup.sql` for den adminbeskyttede
+statistikkoversikten. Hovedkonkurransen holdes utenfor tallene for opprettede
+ligaer og ligadeltakelse.
+
+Kjør `supabase-league-descriptions-setup.sql` for valgfrie ligabeskrivelser.
+Kun ligaeieren kan endre beskrivelsen etter at ligaen er opprettet.
 
 Poengtavlene summerer feltet `points` i lagrede kamptips. Kampresultater ma
 derfor poengberegnes etter synkronisering for at listene skal fa poeng. Den

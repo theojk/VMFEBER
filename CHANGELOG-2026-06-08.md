@@ -24,6 +24,11 @@
 - En ny regelfane forklarer forskjellen mellom Full VM og Daglig, inkludert at
   Daglig har en egen full sammenlagttabell.
 - Toppscorertips kan nå lagres og lastes inn igjen som del av Full VM.
+- Adminområdet har fått en privat statistikkoversikt med antall registrerte
+  brukere, lagrede tips, opprettede ligaer, ligadeltakere og e-postsamtykker.
+- Ligaeiere kan legge inn en valgfri beskrivelse når de oppretter ligaen.
+- Bunnteksten har fått en tydelig lenke for tilbakemeldinger til
+  `olejoergen@gmail.com`.
 - De åtte beste projiserte tredjeplassene får nå hver sin eksakte
   16-delsfinale.
 - Fordelingen bruker alle de 495 offisielle kombinasjonene fra Annex C i

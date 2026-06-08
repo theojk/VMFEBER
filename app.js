@@ -11,6 +11,7 @@ const state = {
   backups: [],
   adminInvitations: [],
   adminUsers: [],
+  adminStatistics: null,
   testUsers: [],
   topScorerPrediction: "",
   isAdmin: false,
@@ -204,6 +205,7 @@ async function loadAdminData() {
   if (!state.supabaseReady || !state.sessionUserId || !state.isAdmin) {
     state.adminInvitations = [];
     state.adminUsers = [];
+    state.adminStatistics = null;
     state.testUsers = [];
     return;
   }
@@ -212,21 +214,25 @@ async function loadAdminData() {
     { data: invitations, error: invitationError },
     { data: users, error: userError },
     { data: testUsers, error: testUserError },
+    { data: statistics, error: statisticsError },
   ] =
     await Promise.all([
       window.vmFeberSupabase.rpc("get_admin_invitations"),
       window.vmFeberSupabase.rpc("get_admin_users"),
       window.vmFeberSupabase.rpc("get_admin_test_users"),
+      window.vmFeberSupabase.rpc("get_admin_statistics"),
     ]);
 
   state.adminInvitations = invitationError ? [] : invitations || [];
   state.adminUsers = userError ? [] : users || [];
   state.testUsers = testUserError ? [] : testUsers || [];
+  state.adminStatistics = statisticsError ? null : Array.isArray(statistics) ? statistics[0] : statistics;
 
   const feedback = document.querySelector("#inviteFeedback");
-  if (invitationError || userError || testUserError) {
+  if (invitationError || userError || testUserError || statisticsError) {
     feedback.textContent =
-      invitationError?.message || userError?.message || testUserError?.message || "Kunne ikke laste admindata.";
+      invitationError?.message || userError?.message || testUserError?.message
+      || statisticsError?.message || "Kunne ikke laste admindata.";
   }
 }
 
@@ -1317,10 +1323,12 @@ function renderLeagues() {
             <div>
               <h4>${escapeHtml(league.name)}</h4>
               <p>${league.member_count} medlemmer · kode ${escapeHtml(league.code)}</p>
+              ${league.description ? `<p class="league-description">${escapeHtml(league.description)}</p>` : ""}
             </div>
             <span class="tag">${league.is_main ? "Hovedkonkurranse" : league.is_public ? "Offentlig" : "Privat"} · ${league.member_role === "owner" ? "Eier" : "Medlem"}</span>
             <div class="league-actions">
               ${league.is_main ? "" : `<button data-copy-code="${escapeHtml(league.code)}">Kopier kode</button>`}
+              ${!league.is_main && league.member_role === "owner" ? `<button data-edit-league-description="${league.id}" data-current-description="${escapeHtml(league.description || "")}">Rediger beskrivelse</button>` : ""}
               <button data-open-leaderboard="${league.id}">Se poengtavler</button>
             </div>
           </article>
@@ -1336,6 +1344,7 @@ function renderLeagues() {
           <div>
             <h4>${escapeHtml(league.name)}</h4>
             <p>${league.member_count} medlemmer</p>
+            ${league.description ? `<p class="league-description">${escapeHtml(league.description)}</p>` : ""}
           </div>
           <span class="tag">Offentlig</span>
           <button data-join-public="${league.id}">Bli med</button>
@@ -1486,6 +1495,19 @@ async function showMemberPredictions(userId, username) {
 }
 
 function renderAdmin() {
+  const statistics = state.adminStatistics;
+  document.querySelector("#adminStatisticsStatus").textContent =
+    statistics ? "Oppdatert ved lasting av siden" : "Statistikk ikke tilgjengelig";
+  document.querySelector("#adminStatisticsGrid").innerHTML = statistics ? `
+    <article><span>Registrerte brukere</span><strong>${statistics.registered_users}</strong><small>${statistics.users_with_predictions} har levert minst ett tips</small></article>
+    <article><span>Lagrede tips</span><strong>${statistics.total_predictions}</strong><small>${statistics.full_vm_predictions} Full VM · ${statistics.daily_predictions} Daglig</small></article>
+    <article><span>Opprettede ligaer</span><strong>${statistics.created_leagues}</strong><small>${statistics.private_leagues} private · ${statistics.public_leagues} offentlige</small></article>
+    <article><span>Ligadeltakere</span><strong>${statistics.unique_league_participants}</strong><small>${statistics.league_memberships} medlemskap totalt</small></article>
+  ` : '<p class="muted">Kjør admin-statistikkmigrasjonen for å aktivere oversikten.</p>';
+  document.querySelector("#adminStatisticsDetail").textContent = statistics
+    ? `${statistics.email_consented_users} brukere har samtykket til konkurranserelatert e-post. Hovedkonkurransen er ikke med i ligatallene.`
+    : "";
+
   document.querySelector("#inviteList").innerHTML = state.adminInvitations.length
     ? state.adminInvitations
       .map((invite) => `
@@ -1707,6 +1729,7 @@ async function joinLeague(code) {
 
 async function createLeague() {
   const nameInput = document.querySelector("#newLeagueName");
+  const descriptionInput = document.querySelector("#newLeagueDescription");
   const visibilityInput = document.querySelector("#newLeagueVisibility");
   const feedback = document.querySelector("#createLeagueFeedback");
 
@@ -1718,6 +1741,7 @@ async function createLeague() {
   const { data, error } = await window.vmFeberSupabase.rpc("create_league", {
     league_name: nameInput.value.trim(),
     league_is_public: visibilityInput.value === "public",
+    league_description: descriptionInput.value.trim() || null,
   });
 
   if (error) {
@@ -1727,10 +1751,28 @@ async function createLeague() {
 
   feedback.textContent = `${data.name} er opprettet med kode ${data.code}.`;
   nameInput.value = "";
+  descriptionInput.value = "";
   visibilityInput.value = "private";
   await loadLeagues();
   renderLeagues();
   renderLeaderboardOptions();
+}
+
+async function editLeagueDescription(leagueId, currentDescription) {
+  const description = window.prompt("Beskrivelse av ligaen (maks 240 tegn):", currentDescription);
+  if (description === null) return;
+  const feedback = document.querySelector("#leagueFeedback");
+  const { error } = await window.vmFeberSupabase.rpc("update_league_description", {
+    selected_league_id: leagueId,
+    league_description: description,
+  });
+  if (error) {
+    feedback.textContent = error.message;
+    return;
+  }
+  feedback.textContent = "Ligabeskrivelsen er oppdatert.";
+  await loadLeagues();
+  renderLeagues();
 }
 
 async function joinPublicLeague(leagueId) {
@@ -1824,6 +1866,7 @@ function bindEvents() {
     state.leaderboardRows = [];
     state.adminInvitations = [];
     state.adminUsers = [];
+    state.adminStatistics = null;
     state.testUsers = [];
     state.topScorerPrediction = "";
     state.isAdmin = false;
@@ -1916,6 +1959,14 @@ function bindEvents() {
     const copyButton = event.target.closest("[data-copy-code]");
     if (copyButton) {
       copyLeagueCode(copyButton.dataset.copyCode);
+      return;
+    }
+    const descriptionButton = event.target.closest("[data-edit-league-description]");
+    if (descriptionButton) {
+      editLeagueDescription(
+        descriptionButton.dataset.editLeagueDescription,
+        descriptionButton.dataset.currentDescription,
+      );
       return;
     }
     const button = event.target.closest("[data-open-leaderboard]");

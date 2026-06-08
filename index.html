@@ -185,6 +185,7 @@
           </div>
           <div class="league-join">
             <label for="newLeagueName">Opprett liga</label>
+            <textarea id="newLeagueDescription" maxlength="240" placeholder="Kort beskrivelse av ligaen, for eksempel hvem den er for"></textarea>
             <div class="input-row league-create-row">
               <input id="newLeagueName" placeholder="Liganavn" />
               <select id="newLeagueVisibility" aria-label="Velg ligasynlighet">
@@ -279,6 +280,17 @@
             <div class="section-heading admin-heading">
               <h3>Administrasjon</h3>
             </div>
+            <section class="admin-statistics-panel">
+              <div class="admin-statistics-heading">
+                <div>
+                  <p class="eyebrow">Kun synlig for admin</p>
+                  <h4>Påmelding og aktivitet</h4>
+                </div>
+                <span id="adminStatisticsStatus">Laster statistikk...</span>
+              </div>
+              <div class="admin-statistics-grid" id="adminStatisticsGrid"></div>
+              <div class="admin-statistics-detail" id="adminStatisticsDetail"></div>
+            </section>
             <div class="admin-grid">
               <section class="admin-panel">
               <h4>Invitasjoner</h4>
@@ -369,7 +381,8 @@
             <span>Uavhengig, privat tippekonkurranse. Ikke tilknyttet eller godkjent av FIFA, NFF eller andre fotballforbund.</span>
           </div>
           <div class="footer-links">
-            <a href="mailto:olejoergen@gmail.com">Kontakt: olejoergen@gmail.com</a>
+            <strong>Har du innspill eller funnet en feil?</strong>
+            <a href="mailto:olejoergen@gmail.com?subject=Tilbakemelding%20til%20VM%20FEBER">Gi tilbakemelding: olejoergen@gmail.com</a>
             <span>Football data provided by the Football-Data.org API</span>
             <span>© 2026 VM FEBER</span>
           </div>
