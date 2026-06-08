@@ -287,10 +287,17 @@ async function savePrediction(matchId) {
   const row = document.querySelector(`[data-match-id="${matchId}"]`);
   const homeScore = row.querySelector('[data-score="home"]').value;
   const awayScore = row.querySelector('[data-score="away"]').value;
-  const extraHomeScore = row.querySelector('[data-extra-score="home"]')?.value ?? "";
-  const extraAwayScore = row.querySelector('[data-extra-score="away"]')?.value ?? "";
-  const penaltyHomeScore = row.querySelector('[data-penalty-score="home"]')?.value ?? "";
-  const penaltyAwayScore = row.querySelector('[data-penalty-score="away"]')?.value ?? "";
+  const regularTie = row.querySelector("[data-tiebreak]") && Number(homeScore) === Number(awayScore);
+  const rawExtraHomeScore = row.querySelector('[data-extra-score="home"]')?.value ?? "";
+  const rawExtraAwayScore = row.querySelector('[data-extra-score="away"]')?.value ?? "";
+  const extraHomeScore = regularTie ? rawExtraHomeScore : "";
+  const extraAwayScore = regularTie ? rawExtraAwayScore : "";
+  const extraTie = regularTie
+    && extraHomeScore !== ""
+    && extraAwayScore !== ""
+    && Number(extraHomeScore) === Number(extraAwayScore);
+  const penaltyHomeScore = extraTie ? row.querySelector('[data-penalty-score="home"]')?.value ?? "" : "";
+  const penaltyAwayScore = extraTie ? row.querySelector('[data-penalty-score="away"]')?.value ?? "" : "";
   const button = row.querySelector(".save-prediction");
 
   if (homeScore === "" || awayScore === "") {
@@ -298,7 +305,7 @@ async function savePrediction(matchId) {
     return false;
   }
 
-  if (row.querySelector("[data-tiebreak]") && Number(homeScore) === Number(awayScore)) {
+  if (regularTie) {
     if (extraHomeScore === "" || extraAwayScore === "") {
       setPredictionFeedback("Uavgjort sluttspilltips må avgjøres etter ekstraomganger.", "error");
       return false;
@@ -414,8 +421,8 @@ function randomizeVisiblePredictions() {
         row.querySelector('[data-penalty-score="home"]').value = penaltyHome;
         row.querySelector('[data-penalty-score="away"]').value = Math.max(0, penaltyHome + (Math.random() < 0.5 ? -1 : 1));
       }
-      updateKnockoutTiebreakVisibility(row);
     }
+    updateKnockoutTiebreakVisibility(row);
     row.querySelector(".save-prediction").textContent = "Lagre";
   });
   renderProjectedGroupTables();
@@ -796,16 +803,26 @@ function knockoutTiebreakFields(match, prediction) {
 function updateKnockoutTiebreakVisibility(row) {
   const tiebreak = row.querySelector("[data-tiebreak]");
   if (!tiebreak) return;
+  const extraInputs = [...row.querySelectorAll("[data-extra-score]")];
+  const penaltyInputs = [...row.querySelectorAll("[data-penalty-score]")];
   const home = row.querySelector('[data-score="home"]').value;
   const away = row.querySelector('[data-score="away"]').value;
   const regularTie = home !== "" && away !== "" && Number(home) === Number(away);
   tiebreak.classList.toggle("hidden", !regularTie);
+  extraInputs.forEach((input) => {
+    input.disabled = !regularTie;
+    if (!regularTie) input.value = "";
+  });
 
   const penalty = row.querySelector("[data-penalty-tiebreak]");
   const extraHome = row.querySelector('[data-extra-score="home"]').value;
   const extraAway = row.querySelector('[data-extra-score="away"]').value;
   const extraTie = regularTie && extraHome !== "" && extraAway !== "" && Number(extraHome) === Number(extraAway);
   penalty.classList.toggle("hidden", !extraTie);
+  penaltyInputs.forEach((input) => {
+    input.disabled = !extraTie;
+    if (!extraTie) input.value = "";
+  });
 }
 
 function projectedScore(match) {

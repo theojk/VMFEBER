@@ -8,6 +8,12 @@
   reglementet for FIFA World Cup 2026.
 - Projiserte vinnere kan dermed føres videre gjennom et reelt sluttspill uten
   kandidatlisten med flere mulige tredjeplasser.
+- Ekstraomgangsfelt skjules og tømmes straks ordinært resultat ikke lenger er
+  uavgjort.
+- Straffesparkfelt skjules og tømmes straks stillingen etter 120 minutter ikke
+  lenger er uavgjort.
+- Hurtigutfylling oppdaterer nå sluttspillfeltene også når et tidligere
+  uavgjort tips erstattes med seier til ett av lagene.
 
 ## Begrensning
 
