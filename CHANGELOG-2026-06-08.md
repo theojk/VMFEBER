@@ -10,6 +10,11 @@
   særpreg og bedre lesbarhet.
 - Mobilvisningen har fått kompaktere statuskort og tydeligere kampkort uten å
   endre tipsflyten.
+- Rettet en CSS-kaskadekonflikt som kunne gi desktop-kolonner og synlig
+  sidepanel på mobil etter designoverhalingen.
+- Gruppetabellene bruker nå to kolonner på brede desktopskjermer og én kolonne
+  før statistikkfeltene blir for smale. Kolonnebredder og typografi er
+  komprimert uten å skjule kampstatistikken.
 - De åtte beste projiserte tredjeplassene får nå hver sin eksakte
   16-delsfinale.
 - Fordelingen bruker alle de 495 offisielle kombinasjonene fra Annex C i
