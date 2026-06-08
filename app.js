@@ -1323,9 +1323,11 @@ async function renderLeaderboard() {
 
   if (!leagueId || !state.sessionUserId) {
     board.innerHTML = '<p class="muted">Logg inn og velg en liga for å se poengtavlen.</p>';
+    closeMemberPredictions();
     return;
   }
 
+  closeMemberPredictions();
   feedback.textContent = "Laster poengtavle...";
   const { data, error } = await window.vmFeberSupabase.rpc("get_league_leaderboard", {
     selected_league_id: leagueId,
@@ -1348,18 +1350,96 @@ async function renderLeaderboard() {
   board.innerHTML = state.leaderboardRows
     .map(
       (row) => `
-        <div class="leader-row">
+        <button class="leader-row" data-view-member="${row.user_id}" data-member-name="${escapeHtml(row.username)}">
           <span class="rank">${row.rank}</span>
           <div class="leader-main">
             <strong>${escapeHtml(row.username)}</strong>
             <span>${row.exact_results} eksakte resultater · ${row.scored_predictions} tips med poeng</span>
           </div>
           <span class="points">${row.points}</span>
-        </div>
+        </button>
       `,
     )
     .join("");
 
+}
+
+function predictionResultLabel(row) {
+  if (row.result_home_score == null || row.result_away_score == null) return "Ikke ferdigspilt";
+  return `Resultat ${row.result_home_score}-${row.result_away_score}`;
+}
+
+function memberPredictionLabel(row) {
+  let label = `Tips ${row.predicted_home_score}-${row.predicted_away_score}`;
+  if (row.predicted_extra_time_home_score != null && row.predicted_extra_time_away_score != null) {
+    label += ` · etter 120 min ${row.predicted_extra_time_home_score}-${row.predicted_extra_time_away_score}`;
+  }
+  if (row.predicted_penalty_home_score != null && row.predicted_penalty_away_score != null) {
+    label += ` · straffer ${row.predicted_penalty_home_score}-${row.predicted_penalty_away_score}`;
+  }
+  return label;
+}
+
+function predictionPointsLabel(row) {
+  if (row.result_home_score == null || row.result_away_score == null) return "Venter";
+  if (row.points === 3) return "3 poeng · eksakt resultat";
+  if (row.points === 1) return "1 poeng · riktig kamputfall";
+  return "0 poeng";
+}
+
+function closeMemberPredictions() {
+  document.querySelector("#memberPredictions").classList.add("hidden");
+  document.querySelector("#memberPredictionList").innerHTML = "";
+  document.querySelector("#memberPredictionsFeedback").textContent = "";
+}
+
+async function showMemberPredictions(userId, username) {
+  const leagueId = document.querySelector("#leaderboardSelect").value;
+  const mode = document.querySelector("#leaderboardModeSelect").value;
+  const dateInput = document.querySelector("#leaderboardDate");
+  const isDailyDate = mode === "daglig-dato";
+  const panel = document.querySelector("#memberPredictions");
+  const feedback = document.querySelector("#memberPredictionsFeedback");
+  const list = document.querySelector("#memberPredictionList");
+
+  panel.classList.remove("hidden");
+  document.querySelector("#memberPredictionsTitle").textContent = `${username} sine tips`;
+  feedback.textContent = "Laster tips...";
+  list.innerHTML = "";
+
+  const { data, error } = await window.vmFeberSupabase.rpc("get_league_member_predictions", {
+    selected_league_id: leagueId,
+    selected_user_id: userId,
+    selected_competition_slug: mode === "full-vm" ? "full-vm" : "daglig",
+    selected_match_day: isDailyDate ? dateInput.value : null,
+  });
+
+  if (error) {
+    feedback.textContent = error.message;
+    return;
+  }
+
+  const rows = data || [];
+  feedback.textContent = rows.length
+    ? `${rows.length} tips er synlige etter fristen.`
+    : "Ingen tips er tilgjengelige etter fristen ennå.";
+  list.innerHTML = rows.map((row) => `
+    <article class="member-prediction-row">
+      <div>
+        <strong>${escapeHtml(row.home_team)} - ${escapeHtml(row.away_team)}</strong>
+        <span>${escapeHtml(formatKickoff(row.kickoff_at))} · ${escapeHtml(stageLabel({
+          stage: row.stage,
+          groupName: row.group_name,
+        }))}</span>
+      </div>
+      <div class="member-prediction-summary">
+        <span>${escapeHtml(memberPredictionLabel(row))}</span>
+        <span>${escapeHtml(predictionResultLabel(row))}</span>
+      </div>
+      <strong class="member-prediction-points">${escapeHtml(predictionPointsLabel(row))}</strong>
+    </article>
+  `).join("");
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderAdmin() {
@@ -1793,6 +1873,11 @@ function bindEvents() {
   document.querySelector("#leaderboardSelect").addEventListener("change", renderLeaderboard);
   document.querySelector("#leaderboardModeSelect").addEventListener("change", renderLeaderboard);
   document.querySelector("#leaderboardDate").addEventListener("change", renderLeaderboard);
+  document.querySelector("#leaderboard").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-view-member]");
+    if (button) showMemberPredictions(button.dataset.viewMember, button.dataset.memberName);
+  });
+  document.querySelector("#closeMemberPredictionsButton").addEventListener("click", closeMemberPredictions);
 
   document.querySelector("#syncMatchesButton").addEventListener("click", () => {
     if (!state.supabaseReady || !state.user) {

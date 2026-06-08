@@ -3,6 +3,7 @@
 ## 1. Supabase SQL Editor
 
 Kjør `supabase-knockout-predictions-setup.sql`.
+Kjør deretter `supabase-league-prediction-visibility-setup.sql`.
 
 Filen kan kjøres på nytt dersom du er usikker på om den ble fullført. Den
 sletter ikke eksisterende tips.
@@ -18,6 +19,7 @@ Last opp alle endrede prosjektfiler. De viktigste er:
 - `supabase-schema.sql`
 - `supabase-football-data-setup.sql`
 - `supabase-knockout-predictions-setup.sql`
+- `supabase-league-prediction-visibility-setup.sql`
 - `supabase/functions/sync-world-cup/index.ts`
 - `supabase/functions/create-prediction-backup/index.ts`
 - `PROJECT-STATUS.md`
@@ -50,6 +52,10 @@ synkroniseringen lagrer ordinær tid separat fra ekstraomganger og straffespark.
 8. Tipp også ekstraomgangene uavgjort og kontroller at straffespark vises.
 9. Velg en straffevinner og kontroller at laget føres videre.
 10. Lagre tipset, last siden på nytt og kontroller at alle feltene er bevart.
+11. Åpne en poengtavle og klikk på et ligamedlem.
+12. Kontroller at Full VM-tips er sperret før samlet frist.
+13. Kontroller at Daglig-tips for en valgt dato er sperret før kl. 12:00 norsk
+    tid og synlig etter fristen.
 
 Merk: poengberegningen bruker foreløpig stillingen etter 90 minutter.
 Bestem senere om riktig lag videre også skal gi egne sluttspillpoeng.

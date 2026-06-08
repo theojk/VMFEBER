@@ -20,6 +20,7 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
 - Daglige tips arves fra Full VM dersom brukeren ikke leverer egne tips.
 - Offentlige og private ligaer med delbar kode.
 - Full VM-, Daglig total- og Daglig per dato-poengtavler.
+- Sikkert tipsinnsyn mellom ligamedlemmer etter relevant frist.
 - Invitasjonskoder og adminoversikt.
 - Testbrukerstøtte er skrevet, men databaseoppsettet bør verifiseres i
   produksjon før funksjonen regnes som ferdig utrullet.
@@ -38,7 +39,6 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
   Tipsene inneholder ikke kortpoeng eller historisk FIFA-ranking.
 - Bonusfeltene for verdensmester, finalist, toppscorer og gruppevinnere er
   foreløpig kun en visuell skisse og lagres ikke.
-- Visning av andre brukeres tips etter fristen står fortsatt på TODO-listen.
 - Norske TV-kanaler er ikke lagt inn ennå.
 
 ## Databasemigrasjoner
@@ -58,7 +58,6 @@ separat i Supabase. GitHub/Vercel deployerer dem ikke automatisk.
 
 ## Anbefalt neste produktarbeid
 
-1. Test hele sluttspillflyten med en innlogget bruker.
-2. Implementer trygg visning av andre brukeres tips etter fristen.
-3. Bestem og implementer endelige bonusspørsmål og bonuspoeng.
-4. Legg inn norsk TV-kanal manuelt eller via en godkjent datakilde.
+1. Test tipsinnsyn mellom ligamedlemmer i produksjon.
+2. Bestem og implementer endelige bonusspørsmål og bonuspoeng.
+3. Legg inn norsk TV-kanal manuelt eller via en godkjent datakilde.

@@ -28,7 +28,7 @@
   - Avklar om korrekt resultat etter 120 minutter eller straffespark skal gi
     bonuspoeng.
 
-- [ ] La ligamedlemmer klikke på en bruker i poengtavlen for å se brukerens tips
+- [x] La ligamedlemmer klikke på en bruker i poengtavlen for å se brukerens tips
   og opptjente poeng.
   - Vis kun tips til andre brukere etter at fristen for den relevante
     konkurransen eller kampdagen har utløpt.

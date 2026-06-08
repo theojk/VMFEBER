@@ -14,6 +14,9 @@
   lenger er uavgjort.
 - Hurtigutfylling oppdaterer nå sluttspillfeltene også når et tidligere
   uavgjort tips erstattes med seier til ett av lagene.
+- Ligamedlemmer kan klikke på brukere i poengtavlen og se tips, kampresultat
+  og poeng etter relevant frist.
+- Tipsinnsyn kontrolleres i databasen og krever medlemskap i samme valgte liga.
 
 ## Begrensning
 

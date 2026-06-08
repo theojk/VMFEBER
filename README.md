@@ -15,6 +15,7 @@ Se [PROJECT-STATUS.md](PROJECT-STATUS.md) for prosjektstatus,
   - Daglig konkurranse med frist kl. 12:00 norsk tid
 - Private ligaer med kode
 - Poengtavler som bare vises for ligaer brukeren er medlem av
+- Klikkbart tipsinnsyn mellom ligamedlemmer etter relevant frist
 - Autooppdaterte projiserte tabeller for alle 12 VM-grupper og tredjeplasser
 - Valgfri flytende live-tabell på desktop som følger kampen brukeren tipper på
 - Rundeetiketter og projisert sluttspill med FIFAs offisielle Annex C-fordeling
@@ -24,10 +25,9 @@ Se [PROJECT-STATUS.md](PROJECT-STATUS.md) for prosjektstatus,
 
 ## Neste naturlige steg
 
-1. Test sluttspilltips med ekstraomganger og straffespark i produksjon.
-2. La ligamedlemmer se andres tips etter relevant frist.
-3. Bestem og implementer endelige bonusspørsmål og bonuspoeng.
-4. Legg inn norske TV-kanaler.
+1. Test tipsinnsyn mellom ligamedlemmer i produksjon.
+2. Bestem og implementer endelige bonusspørsmål og bonuspoeng.
+3. Legg inn norske TV-kanaler.
 
 ## Lokal bruk
 
@@ -130,6 +130,10 @@ Kjor `supabase-leagues-setup.sql` i SQL Editor. Den aktiverer:
 - daglig poengtavle per kampdato
 - samlet daglig poengtavle gjennom hele VM
 - tilgangskontroll slik at bare ligamedlemmer kan hente poengtavlen
+
+Kjør `supabase-league-prediction-visibility-setup.sql` for å la ligamedlemmer
+se hverandres tips etter relevant frist. Databasefunksjonen kontrollerer både
+ligamedlemskap og frist før tipsene returneres.
 
 Poengtavlene summerer feltet `points` i lagrede kamptips. Kampresultater ma
 derfor poengberegnes etter synkronisering for at listene skal fa poeng. Den
