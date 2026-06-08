@@ -1741,6 +1741,45 @@ body {
   color: white;
 }
 
+.consent-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  gap: 9px;
+  margin-top: 12px;
+  color: #e5edf8;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.consent-row input {
+  width: 18px;
+  min-height: 18px;
+  margin-top: 1px;
+  accent-color: #d7193f;
+}
+
+.privacy-copy {
+  margin: 8px 0 0;
+  color: #9eacc0;
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.mobile-login-button {
+  display: none;
+  min-height: 38px;
+  border: 0;
+  border-radius: 10px 4px 10px 4px;
+  padding: 0 13px;
+  background: var(--red);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 850;
+  box-shadow: 0 8px 18px rgba(215, 25, 63, 0.24);
+}
+
 .main-content {
   width: min(100%, 1580px);
   padding: 30px clamp(20px, 3.5vw, 58px) 40px;
@@ -2123,6 +2162,135 @@ body {
   content: "POENG";
 }
 
+.bonus-save-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.bonus-save-row button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 10px 4px 10px 4px;
+  padding: 0 16px;
+  background: var(--primary-fill);
+  color: white;
+  font-weight: 850;
+}
+
+.bonus-coming-soon {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  border: 1px dashed var(--line);
+  border-radius: 12px 4px 12px 4px;
+  padding: 14px;
+  background: var(--subtle-surface);
+}
+
+.bonus-coming-soon span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.rules-explainer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.rules-explainer-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 390px;
+  border-radius: 24px 7px 24px 7px;
+  padding: 30px;
+  color: white;
+  box-shadow: var(--shadow-strong);
+}
+
+.rules-explainer-card::after {
+  position: absolute;
+  right: -70px;
+  bottom: -100px;
+  width: 260px;
+  height: 260px;
+  border: 36px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  content: "";
+}
+
+.full-rules {
+  background: linear-gradient(145deg, #071f46, #123c76);
+}
+
+.daily-rules {
+  background: linear-gradient(145deg, #9e0827, #d7193f);
+}
+
+.rules-number {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 4rem;
+  font-weight: 950;
+  letter-spacing: -0.08em;
+}
+
+.rules-explainer-card h3 {
+  margin: -12px 0 12px;
+  color: white;
+  font-size: 2.2rem;
+}
+
+.rules-explainer-card p {
+  max-width: 36rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 700;
+}
+
+.rules-explainer-card ul {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+  margin: 24px 0 0;
+  padding-left: 20px;
+  line-height: 1.5;
+}
+
+.points-explainer {
+  margin-top: 22px;
+  border-radius: 18px 6px 18px 6px;
+  padding: 22px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.points-explainer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.points-explainer-grid div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 12px 4px 12px 4px;
+  padding: 14px;
+  background: var(--subtle-surface);
+}
+
+.points-explainer-grid strong {
+  color: var(--red);
+  font-size: 2rem;
+}
+
+.points-explainer-grid span {
+  color: var(--muted);
+  font-weight: 750;
+}
+
 html[data-theme="dark"] .knockout-round {
   background: rgba(255, 255, 255, 0.025);
 }
@@ -2152,6 +2320,10 @@ html[data-theme="dark"] .sidebar {
   .main-content {
     width: 100%;
     min-width: 0;
+  }
+
+  .rules-explainer-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
 }
@@ -2192,6 +2364,15 @@ html[data-theme="dark"] .sidebar {
   .mobile-menu-close {
     border-color: var(--line);
     border-radius: 12px 4px 12px 4px;
+  }
+
+  .mobile-login-button {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .mobile-login-button.hidden {
+    display: none;
   }
 
   .mobile-menu-close {
@@ -2305,6 +2486,19 @@ html[data-theme="dark"] .sidebar {
 
   .leader-row {
     padding: 12px 10px;
+  }
+
+  .rules-explainer-card {
+    min-height: 0;
+    padding: 22px;
+  }
+
+  .points-explainer-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bonus-save-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

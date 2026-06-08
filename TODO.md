@@ -2,6 +2,13 @@
 
 ## Administrasjon og brukere
 
+- [ ] Etabler og test sletting/anonymisering av alle e-postadresser senest
+  26. juli 2026, én uke etter VM-finalen.
+  - Fjern adressene både fra Supabase Auth og profiler uten å slette nødvendig
+    konkurransehistorikk.
+  - Dokumenter og test prosedyren før turneringen starter.
+  - Send bare konkurranserelatert e-post til brukere med lagret samtykke.
+
 - [x] Lag en adminoversikt over alle registrerte brukere.
   - Vis brukernavn, e-post, registreringsdato og registreringskilde/invitasjonskode.
   - Vis hvilke ligaer brukeren er medlem av.

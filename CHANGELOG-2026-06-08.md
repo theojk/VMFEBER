@@ -15,6 +15,15 @@
 - Gruppetabellene bruker nå to kolonner på brede desktopskjermer og én kolonne
   før statistikkfeltene blir for smale. Kolonnebredder og typografi er
   komprimert uten å skjule kampstatistikken.
+- Mobil har fått en tydelig **Logg inn for å tippe**-knapp som åpner
+  innloggingspanelet.
+- Magic-link-beskjeden forklarer at e-posten kommer fra Supabase og kan havne
+  i søppelpost/spam.
+- Registrering krever eksplisitt e-postsamtykke og forklarer at adressen kun
+  brukes til konkurransen og slettes senest én uke etter VM.
+- En ny regelfane forklarer forskjellen mellom Full VM og Daglig, inkludert at
+  Daglig har en egen full sammenlagttabell.
+- Toppscorertips kan nå lagres og lastes inn igjen som del av Full VM.
 - De åtte beste projiserte tredjeplassene får nå hver sin eksakte
   16-delsfinale.
 - Fordelingen bruker alle de 495 offisielle kombinasjonene fra Annex C i

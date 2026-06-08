@@ -21,6 +21,7 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
 - Offentlige og private ligaer med delbar kode.
 - Full VM-, Daglig total- og Daglig per dato-poengtavler.
 - Sikkert tipsinnsyn mellom ligamedlemmer etter relevant frist.
+- E-postsamtykke ved registrering og tydelig informasjon om sletting etter VM.
 - Invitasjonskoder og adminoversikt.
 - Testbrukerstøtte er skrevet, men databaseoppsettet bør verifiseres i
   produksjon før funksjonen regnes som ferdig utrullet.
@@ -35,11 +36,13 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
 
 ## Viktige begrensninger
 
+- Automatisk sletting/anonymisering av e-postadresser må etableres og testes
+  før fristen 26. juli 2026.
 - Ved helt lik poengsum, målforskjell og antall scorede mål mellom projiserte
   tredjeplasser bruker appen grupperekkefølge som stabil simulert avgjørelse.
   Tipsene inneholder ikke kortpoeng eller historisk FIFA-ranking.
-- Bonusfeltene for verdensmester, finalist, toppscorer og gruppevinnere er
-  foreløpig kun en visuell skisse og lagres ikke.
+- Toppscorertips lagres som del av Full VM. Bonusfeltene for verdensmester,
+  finalist og gruppevinnere er ikke implementert ennå.
 - Norske TV-kanaler er ikke lagt inn ennå.
 
 ## Databasemigrasjoner
@@ -48,6 +51,9 @@ Den nyeste migrasjonen for sluttspilltips er
 `supabase-knockout-predictions-setup.sql`. Den legger til ekstraomganger og
 straffespark på tips, oppdaterer lagringsfunksjonen og sørger for at Daglig kan
 arve hele sluttspilltipset.
+
+`supabase-consent-and-top-scorer-setup.sql` legger til e-postsamtykke,
+samtykkestatus i adminoversikten og lagret toppscorertips.
 
 ## Edge Functions
 

@@ -16,6 +16,8 @@ Se [PROJECT-STATUS.md](PROJECT-STATUS.md) for prosjektstatus,
 - Private ligaer med kode
 - Poengtavler som bare vises for ligaer brukeren er medlem av
 - Klikkbart tipsinnsyn mellom ligamedlemmer etter relevant frist
+- Regelfane som forklarer Full VM, Daglig og de separate poengtavlene
+- Lagret toppscorertips og eksplisitt samtykke til konkurranserelatert e-post
 - Autooppdaterte projiserte tabeller for alle 12 VM-grupper og tredjeplasser
 - Valgfri flytende live-tabell på desktop som følger kampen brukeren tipper på
 - Rundeetiketter og projisert sluttspill med FIFAs offisielle Annex C-fordeling
@@ -134,6 +136,10 @@ Kjor `supabase-leagues-setup.sql` i SQL Editor. Den aktiverer:
 Kjør `supabase-league-prediction-visibility-setup.sql` for å la ligamedlemmer
 se hverandres tips etter relevant frist. Databasefunksjonen kontrollerer både
 ligamedlemskap og frist før tipsene returneres.
+
+Kjør `supabase-consent-and-top-scorer-setup.sql` for lagret toppscorertips og
+e-postsamtykke. Det må i tillegg etableres en testet driftsprosedyre som
+fjerner eller anonymiserer alle e-postadresser senest 26. juli 2026.
 
 Poengtavlene summerer feltet `points` i lagrede kamptips. Kampresultater ma
 derfor poengberegnes etter synkronisering for at listene skal fa poeng. Den

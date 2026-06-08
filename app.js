@@ -12,6 +12,7 @@ const state = {
   adminInvitations: [],
   adminUsers: [],
   testUsers: [],
+  topScorerPrediction: "",
   isAdmin: false,
   theme: localStorage.getItem("vmFeberTheme") || "system",
   liveGroupEnabled: localStorage.getItem("vmFeberLiveGroup") !== "off",
@@ -477,6 +478,7 @@ const viewTitles = {
   predictions: "Mine tips",
   leagues: "Ligaer",
   leaderboards: "Poengtavler",
+  rules: "Regler",
   settings: "Innstillinger",
 };
 
@@ -545,22 +547,26 @@ async function syncSupabaseSession() {
   const pendingProfile = JSON.parse(localStorage.getItem("vmFeberPendingProfile") || "null");
   let { data: profile } = await window.vmFeberSupabase
     .from("profiles")
-    .select("username,email,invite_code,registration_source,is_admin")
+    .select("username,email,invite_code,registration_source,is_admin,email_contact_consent")
     .eq("id", session.user.id)
     .maybeSingle();
 
+  if (pendingProfile?.emailConsent && !profile?.email_contact_consent) {
+    await window.vmFeberSupabase.rpc("set_email_contact_consent", { accepted: true });
+  }
   if (profile || pendingProfile) localStorage.removeItem("vmFeberPendingProfile");
 
   state.user = {
     email: profile?.email || session.user.email,
     username: profile?.username || session.user.email?.split("@")[0] || "bruker",
     inviteCode: profile?.invite_code || profile?.registration_source || "åpen registrering",
+    emailConsent: Boolean(profile?.email_contact_consent || pendingProfile?.emailConsent),
   };
   state.isAdmin = Boolean(profile?.is_admin);
   save();
 }
 
-async function sendMagicLink(email, username, inviteCode) {
+async function sendMagicLink(email, username, inviteCode, emailConsent) {
   if (inviteCode) {
     const { data: isValid, error: validationError } = await window.vmFeberSupabase
       .rpc("validate_invitation_code", { check_code: inviteCode });
@@ -571,7 +577,7 @@ async function sendMagicLink(email, username, inviteCode) {
     }
   }
 
-  localStorage.setItem("vmFeberPendingProfile", JSON.stringify({ username, inviteCode }));
+  localStorage.setItem("vmFeberPendingProfile", JSON.stringify({ username, inviteCode, emailConsent }));
 
   const redirectTo = window.location.href.split("#")[0].split("?")[0];
   const { error } = await window.vmFeberSupabase.auth.signInWithOtp({
@@ -581,6 +587,7 @@ async function sendMagicLink(email, username, inviteCode) {
       data: {
         username,
         invite_code: inviteCode || null,
+        email_contact_consent: emailConsent,
       },
     },
   });
@@ -590,8 +597,37 @@ async function sendMagicLink(email, username, inviteCode) {
     return false;
   }
 
-  document.querySelector("#loginFeedback").textContent = "Magic link sendt. Sjekk e-posten din.";
+  document.querySelector("#loginFeedback").textContent =
+    "Magic link er sendt fra Supabase. Sjekk innboksen og søppelpost/spam.";
   return true;
+}
+
+async function loadTopScorerPrediction() {
+  if (!state.supabaseReady || !state.sessionUserId) {
+    state.topScorerPrediction = "";
+    return;
+  }
+  const { data, error } = await window.vmFeberSupabase.rpc("get_my_top_scorer_prediction");
+  state.topScorerPrediction = error ? "" : data || "";
+}
+
+async function saveTopScorerPrediction() {
+  const input = document.querySelector("#topScorerInput");
+  const feedback = document.querySelector("#topScorerFeedback");
+  if (!state.sessionUserId) {
+    feedback.textContent = "Logg inn for å lagre toppscorertipset.";
+    return;
+  }
+  const { data, error } = await window.vmFeberSupabase.rpc("save_top_scorer_prediction", {
+    player_name: input.value.trim(),
+  });
+  if (error) {
+    feedback.textContent = error.message;
+    return;
+  }
+  const saved = Array.isArray(data) ? data[0] : data;
+  state.topScorerPrediction = saved.answer;
+  feedback.textContent = "Toppscorertipset er lagret.";
 }
 
 function renderModes() {
@@ -697,10 +733,17 @@ function renderMatches() {
         <div class="bonus-panel">
           <h3>Bonus og sluttspill</h3>
           <div class="bonus-grid">
-            <label>Verdensmester<input placeholder="Velg lag" /></label>
-            <label>Finalemotstander<input placeholder="Velg lag" /></label>
-            <label>Toppscorer<input placeholder="Spiller" /></label>
-            <label>Gruppevinner gruppe A<input placeholder="Velg lag" /></label>
+            <label>Toppscorer
+              <div class="bonus-save-row">
+                <input id="topScorerInput" value="${escapeHtml(state.topScorerPrediction)}" placeholder="Spiller" />
+                <button id="saveTopScorerButton">Lagre</button>
+              </div>
+              <span class="microcopy" id="topScorerFeedback">Lagres som del av Full VM-tipset.</span>
+            </label>
+            <div class="bonus-coming-soon">
+              <strong>Flere bonusspørsmål kommer</strong>
+              <span>Verdensmester, finalist og gruppevinnere legges inn når endelige poengregler er bestemt.</span>
+            </div>
           </div>
         </div>
       `
@@ -1484,6 +1527,7 @@ function renderAdmin() {
           <span>${formatKickoff(user.created_at)}</span>
           <span class="admin-user-meta">
             ${user.invite_code ? `Invitasjon ${escapeHtml(user.invite_code)}` : "Åpen registrering"}
+            · E-post: ${user.email_contact_consent ? "samtykke gitt" : "ikke tillatt"}
             · Full VM: ${user.full_prediction_count} tips
             · Daglig: ${user.daily_prediction_count} tips
             · Ligaer: ${user.league_names.length ? user.league_names.map(escapeHtml).join(", ") : "ingen"}
@@ -1609,6 +1653,7 @@ function renderUser() {
     userPanel.classList.add("hidden");
     setPredictionFeedback("Logg inn for å lagre tipsene dine.");
   }
+  document.querySelector("#mobileLoginButton").classList.toggle("hidden", Boolean(state.user));
   renderSettings();
 }
 
@@ -1741,6 +1786,7 @@ function bindEvents() {
     const email = document.querySelector("#emailInput").value.trim();
     const username = document.querySelector("#usernameInput").value.trim();
     const inviteCode = document.querySelector("#inviteInput").value.trim();
+    const emailConsent = document.querySelector("#emailConsentInput").checked;
     if (!username) {
       document.querySelector("#loginFeedback").textContent = "Velg et brukernavn som kan vises på poengtavlene.";
       return;
@@ -1749,15 +1795,24 @@ function bindEvents() {
       document.querySelector("#loginFeedback").textContent = "Skriv inn en gyldig e-postadresse.";
       return;
     }
+    if (!emailConsent) {
+      document.querySelector("#loginFeedback").textContent =
+        "Du må samtykke til e-post om konkurransen før vi kan etablere brukeren.";
+      return;
+    }
 
     if (state.supabaseReady) {
-      await sendMagicLink(email, username, inviteCode);
+      await sendMagicLink(email, username, inviteCode, emailConsent);
       return;
     }
 
     state.user = { email, username, inviteCode: inviteCode || "åpen registrering" };
     save();
     renderUser();
+  });
+  document.querySelector("#mobileLoginButton").addEventListener("click", () => {
+    setMobileMenu(true);
+    window.setTimeout(() => document.querySelector("#usernameInput").focus(), 200);
   });
 
   const logout = () => {
@@ -1770,6 +1825,7 @@ function bindEvents() {
     state.adminInvitations = [];
     state.adminUsers = [];
     state.testUsers = [];
+    state.topScorerPrediction = "";
     state.isAdmin = false;
     save();
     if (state.supabaseReady) {
@@ -1847,6 +1903,9 @@ function bindEvents() {
   document.querySelector("#matchList").addEventListener("focusin", (event) => {
     if (event.target.matches("[data-score]")) showLiveGroupForMatchRow(event.target.closest("[data-match-id]"));
   });
+  document.querySelector("#bonusPanel").addEventListener("click", (event) => {
+    if (event.target.closest("#saveTopScorerButton")) saveTopScorerPrediction();
+  });
 
   document.querySelector("#joinLeagueButton").addEventListener("click", () => {
     joinLeague(document.querySelector("#leagueCode").value);
@@ -1894,6 +1953,7 @@ async function init() {
   await syncSupabaseSession();
   await loadMatches();
   await loadPredictions();
+  await loadTopScorerPrediction();
   await loadBackups();
   await loadLeagues();
   await loadAdminData();

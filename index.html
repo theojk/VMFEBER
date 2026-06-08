@@ -29,12 +29,13 @@
           <button class="nav-item" data-view="predictions"><i class="nav-icon" data-lucide="target"></i><span>Mine tips</span></button>
           <button class="nav-item" data-view="leaderboards"><i class="nav-icon" data-lucide="trophy"></i><span>Poengtavler</span></button>
           <button class="nav-item" data-view="leagues"><i class="nav-icon" data-lucide="users"></i><span>Ligaer</span></button>
+          <button class="nav-item" data-view="rules"><i class="nav-icon" data-lucide="book-open"></i><span>Regler</span></button>
           <button class="nav-item" data-view="settings"><i class="nav-icon" data-lucide="settings"></i><span>Innstillinger</span></button>
         </nav>
 
         <section class="login-panel" id="loginPanel">
           <p class="panel-title">Innlogging</p>
-          <p class="muted">Magic link: skriv e-post, klikk lenken du får, og du er inne.</p>
+          <p class="muted">Vi sender en magic link fra Supabase. E-posten kan havne i søppelpost/spam.</p>
           <label for="usernameInput">Brukernavn</label>
           <input id="usernameInput" placeholder="Vises på poengtavler" />
           <label for="emailInput">E-post</label>
@@ -42,8 +43,13 @@
           <label for="inviteInput">Invitasjonskode</label>
           <div class="input-row">
             <input id="inviteInput" placeholder="Valgfritt" />
-            <button id="loginButton">Send</button>
+            <button id="loginButton">Send innloggingslenke</button>
           </div>
+          <label class="consent-row" for="emailConsentInput">
+            <input id="emailConsentInput" type="checkbox" />
+            <span>Jeg samtykker til e-post om VM FEBER-konkurransen.</span>
+          </label>
+          <p class="privacy-copy">E-postadressen brukes kun til denne konkurransen og slettes senest én uke etter at VM er ferdig.</p>
           <p class="microcopy" id="loginFeedback">Vi sender en trygg innloggingslenke til e-posten din.</p>
         </section>
 
@@ -66,6 +72,7 @@
           </div>
           <div class="status-strip">
             <span id="saveStatus">Tips ikke lastet</span>
+            <button class="mobile-login-button" id="mobileLoginButton">Logg inn for å tippe</button>
           </div>
         </header>
 
@@ -263,7 +270,7 @@
             </section>
             <section class="settings-panel">
               <h4>Personvern og konto</h4>
-              <p class="muted">VM FEBER lagrer e-post, brukernavn, ligamedlemskap og tips for å drifte konkurransen. Opplysningene deles ikke kommersielt.</p>
+              <p class="muted">VM FEBER lagrer e-post, brukernavn, ligamedlemskap og tips kun for å drifte konkurransen. E-postadressene slettes senest én uke etter at VM er ferdig og deles ikke kommersielt.</p>
               <button class="ghost-button" id="settingsLogoutButton">Logg ut</button>
             </section>
           </div>
@@ -313,6 +320,47 @@
               </section>
             </div>
           </div>
+        </section>
+
+        <section class="view" id="rules">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">To konkurranser · to poengtavler</p>
+              <h3>Regler og forskjeller</h3>
+            </div>
+          </div>
+          <div class="rules-explainer-grid">
+            <article class="rules-explainer-card full-rules">
+              <span class="rules-number">01</span>
+              <h3>Full VM</h3>
+              <p>Du tipper hele mesterskapet samlet før turneringen starter.</p>
+              <ul>
+                <li>Alle 104 kampresultater og hele sluttspillet tippes på forhånd.</li>
+                <li>Samlet frist er to timer før første kamp.</li>
+                <li>Tipsene brukes som reserve for Daglig dersom du ikke leverer den dagen.</li>
+                <li>Full VM har en egen samlet poengtavle.</li>
+              </ul>
+            </article>
+            <article class="rules-explainer-card daily-rules">
+              <span class="rules-number">02</span>
+              <h3>Daglig tipping</h3>
+              <p>Du kan justere tipsene kampdag for kampdag gjennom hele VM.</p>
+              <ul>
+                <li>Dagens kamper må leveres innen kl. 12:00 norsk tid.</li>
+                <li>Daglig har både poengtavle per dato og en egen full sammenlagttabell for hele VM.</li>
+                <li>Manglende daglige tips arves automatisk fra Full VM-tipset ditt.</li>
+                <li>Daglig og Full VM konkurrerer helt separat.</li>
+              </ul>
+            </article>
+          </div>
+          <section class="points-explainer">
+            <h3>Poeng per kamp</h3>
+            <div class="points-explainer-grid">
+              <div><strong>3</strong><span>Eksakt resultat</span></div>
+              <div><strong>1</strong><span>Riktig vinner eller uavgjort</span></div>
+              <div><strong>0</strong><span>Feil kamputfall</span></div>
+            </div>
+          </section>
         </section>
 
         <footer class="site-footer">
