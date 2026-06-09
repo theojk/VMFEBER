@@ -1,5 +1,13 @@
 # VM FEBER - TODO
 
+## Før videre produktarbeid
+
+- [ ] Bekreft hvilke av de nyeste migrasjonene som er kjørt i Supabase.
+- [ ] Bekreft at alle nyeste frontendfiler er lastet opp til GitHub og publisert
+  av Vercel.
+- [ ] Gjennomfør funksjonstesten i `MORNING-CHECKLIST.md`.
+- [ ] Verifiser testbrukerstøtten i produksjon.
+
 ## Administrasjon og brukere
 
 - [ ] Etabler og test sletting/anonymisering av alle e-postadresser senest

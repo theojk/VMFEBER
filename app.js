@@ -604,7 +604,7 @@ async function sendMagicLink(email, username, inviteCode, emailConsent) {
   }
 
   document.querySelector("#loginFeedback").textContent =
-    "Magic link er sendt fra Supabase. Sjekk innboksen og søppelpost/spam.";
+    "Innloggingslenken er sendt fra Supabase. Åpne e-posten og trykk på lenken for å logge inn. Sjekk søppelpost/spam dersom du ikke finner den.";
   return true;
 }
 

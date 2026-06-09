@@ -354,6 +354,36 @@ html[data-theme="dark"] select {
   font-size: 0.84rem;
 }
 
+.returning-user-help {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.returning-user-help ol {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+
+.returning-user-help li + li {
+  margin-top: 5px;
+}
+
+.returning-user-help p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.optional-label {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
 .data-credit {
   margin-top: 16px;
   color: var(--muted);

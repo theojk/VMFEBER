@@ -35,14 +35,22 @@
 
         <section class="login-panel" id="loginPanel">
           <p class="panel-title">Innlogging</p>
-          <p class="muted">Vi sender en magic link fra Supabase. E-posten kan havne i søppelpost/spam.</p>
+          <div class="returning-user-help">
+            <strong>Har du allerede en bruker?</strong>
+            <ol>
+              <li>Skriv inn samme e-postadresse som sist. Brukernavn-feltet må fylles ut, men det lagrede brukernavnet ditt beholdes.</li>
+              <li>La invitasjonskoden stå tom, kryss av for e-postsamtykke og trykk <strong>Send innloggingslenke</strong>.</li>
+              <li>Åpne e-posten fra Supabase og trykk på lenken for å bli logget inn igjen.</li>
+            </ol>
+            <p>Sjekk søppelpost/spam dersom e-posten ikke dukker opp.</p>
+          </div>
           <label for="usernameInput">Brukernavn</label>
-          <input id="usernameInput" placeholder="Vises på poengtavler" />
+          <input id="usernameInput" placeholder="Bruk samme som sist" />
           <label for="emailInput">E-post</label>
-          <input id="emailInput" type="email" placeholder="navn@eksempel.no" />
-          <label for="inviteInput">Invitasjonskode</label>
+          <input id="emailInput" type="email" placeholder="Bruk samme e-post som sist" />
+          <label for="inviteInput">Invitasjonskode <span class="optional-label">kun for nye brukere</span></label>
           <div class="input-row">
-            <input id="inviteInput" placeholder="Valgfritt" />
+            <input id="inviteInput" placeholder="La stå tom ved innlogging" />
             <button id="loginButton">Send innloggingslenke</button>
           </div>
           <label class="consent-row" for="emailConsentInput">
@@ -50,7 +58,7 @@
             <span>Jeg samtykker til e-post om VM FEBER-konkurransen.</span>
           </label>
           <p class="privacy-copy">E-postadressen brukes kun til denne konkurransen og slettes senest én uke etter at VM er ferdig.</p>
-          <p class="microcopy" id="loginFeedback">Vi sender en trygg innloggingslenke til e-posten din.</p>
+          <p class="microcopy" id="loginFeedback">Du trenger ikke passord. Vi sender en trygg innloggingslenke til e-posten din.</p>
         </section>
 
         <section class="user-panel hidden" id="userPanel">

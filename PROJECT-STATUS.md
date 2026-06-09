@@ -1,6 +1,10 @@
 # VM FEBER - prosjektstatus
 
-Sist oppdatert: 8. juni 2026.
+Sist oppdatert: 9. juni 2026.
+
+Les `HANDOFF-2026-06-09.md` først ved oppstart i en ny chat. Den skiller mellom
+bekreftet produksjonsstatus og funksjoner som er utviklet lokalt, men fortsatt
+må bekreftes utrullet og testet.
 
 ## Produksjon
 
@@ -68,6 +72,9 @@ separat i Supabase. GitHub/Vercel deployerer dem ikke automatisk.
 
 ## Anbefalt neste produktarbeid
 
-1. Test tipsinnsyn mellom ligamedlemmer i produksjon.
-2. Bestem og implementer endelige bonusspørsmål og bonuspoeng.
-3. Legg inn norsk TV-kanal manuelt eller via en godkjent datakilde.
+1. Bekreft utrulling og produksjonstest av den nyeste lokale pakken ved hjelp
+   av `MORNING-CHECKLIST.md`.
+2. Bestem og implementer endelige sluttspillpoeng.
+3. Bestem og implementer resterende bonusspørsmål og bonuspoeng.
+4. Legg inn norsk TV-kanal manuelt eller via en godkjent datakilde.
+5. Etabler og test sletting/anonymisering av e-postadresser før 26. juli 2026.

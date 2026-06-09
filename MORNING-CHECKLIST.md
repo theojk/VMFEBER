@@ -1,5 +1,11 @@
 # VM FEBER - sjekkliste for neste utrulling
 
+Sist oppdatert: 9. juni 2026.
+
+Før du starter: avklar hvilke steg som allerede er fullført. Annex C-fordeling,
+sluttspilltips og Edge Functions er tidligere bekreftet i produksjon. Status
+for de fire nyeste migrasjonene og den nyeste frontendpakken må bekreftes.
+
 ## 1. Supabase SQL Editor
 
 Kjør `supabase-knockout-predictions-setup.sql`.
@@ -30,6 +36,7 @@ Last opp alle endrede prosjektfiler. De viktigste er:
 - `supabase/functions/create-prediction-backup/index.ts`
 - `PROJECT-STATUS.md`
 - `MORNING-CHECKLIST.md`
+- `HANDOFF-2026-06-09.md`
 
 Vercel skal deretter deployere frontend automatisk.
 
