@@ -29,7 +29,7 @@ Se [PROJECT-STATUS.md](PROJECT-STATUS.md) for prosjektstatus,
 ## Neste naturlige steg
 
 1. Test tipsinnsyn mellom ligamedlemmer i produksjon.
-2. Bestem og implementer endelige bonusspørsmål og bonuspoeng.
+2. Rull ut og test spillerregisteret og de nye bonusspørsmålene.
 3. Legg inn norske TV-kanaler.
 
 ## Lokal bruk
@@ -141,6 +141,23 @@ ligamedlemskap og frist før tipsene returneres.
 Kjør `supabase-consent-and-top-scorer-setup.sql` for lagret toppscorertips og
 e-postsamtykke. Det må i tillegg etableres en testet driftsprosedyre som
 fjerner eller anonymiserer alle e-postadresser senest 26. juli 2026.
+
+## Bonusspørsmål og spillerregister
+
+Kjør disse filene i denne rekkefølgen:
+
+1. `supabase-player-options-setup.sql`
+2. `supabase-bonus-questions-2026-setup.sql`
+3. `supabase-player-options-2026-seed.sql`
+
+Seed-filen er generert fra FIFAs offisielle troppsliste datert 10. juni 2026
+og inneholder 48 lag og 1 248 spillere. Den kan kjøres flere ganger uten å
+duplisere spillere. `tools/generate_player_seed.py` kan brukes til å generere
+en ny seed når FIFA publiserer en oppdatert troppsliste.
+
+Bonusspørsmålene er del av Full VM og bruker lagvalg, spillersøk, tallfelt og
+ja/nei-valg. Gruppeplasseringer avledes fortsatt fra kamptipsene og vises ikke
+som separate bonusfelt.
 
 Kjør `supabase-admin-statistics-setup.sql` for den adminbeskyttede
 statistikkoversikten. Hovedkonkurransen holdes utenfor tallene for opprettede

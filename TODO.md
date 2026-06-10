@@ -36,6 +36,13 @@
 
 ## Poengtavler og tipsinnsyn
 
+- [ ] Rull ut og produksjonstest bonusspørsmål og spillerregister.
+  - Kjør `supabase-player-options-setup.sql`,
+    `supabase-bonus-questions-2026-setup.sql` og
+    `supabase-player-options-2026-seed.sql` i denne rekkefølgen.
+  - Kontroller spillersøk på Messi, Haaland og Mbappé.
+  - Kontroller lagring av lag, spiller, tall og ja/nei før Full VM-fristen.
+
 - [ ] Bestem endelig poengregel for sluttspill.
   - Ordinært kampresultat sammenlignes nå med stillingen etter 90 minutter.
   - Avklar om riktig lag videre etter ekstraomganger eller straffespark også

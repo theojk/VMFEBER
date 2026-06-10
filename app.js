@@ -13,7 +13,11 @@ const state = {
   adminUsers: [],
   adminStatistics: null,
   testUsers: [],
-  topScorerPrediction: "",
+  bonusQuestions: [],
+  bonusPredictions: {},
+  bonusTeams: [],
+  playerSearchResults: {},
+  playerSearchTimers: {},
   isAdmin: false,
   theme: localStorage.getItem("vmFeberTheme") || "system",
   liveGroupEnabled: localStorage.getItem("vmFeberLiveGroup") !== "off",
@@ -608,32 +612,99 @@ async function sendMagicLink(email, username, inviteCode, emailConsent) {
   return true;
 }
 
-async function loadTopScorerPrediction() {
-  if (!state.supabaseReady || !state.sessionUserId) {
-    state.topScorerPrediction = "";
+async function loadBonusQuestions() {
+  if (!state.supabaseReady) {
+    state.bonusQuestions = [];
+    state.bonusTeams = [];
     return;
   }
-  const { data, error } = await window.vmFeberSupabase.rpc("get_my_top_scorer_prediction");
-  state.topScorerPrediction = error ? "" : data || "";
+
+  const [{ data: questions, error: questionError }, { data: teams, error: teamError }] = await Promise.all([
+    window.vmFeberSupabase
+      .from("bonus_questions")
+      .select("slug,label,points,sort_order,question_type,option_source,validation_rule,description")
+      .eq("is_active", true)
+      .neq("question_type", "computed")
+      .order("sort_order", { ascending: true }),
+    window.vmFeberSupabase
+      .from("teams")
+      .select("fifa_code,display_name")
+      .eq("is_active", true)
+      .order("display_name", { ascending: true }),
+  ]);
+
+  state.bonusQuestions = questionError ? [] : questions || [];
+  state.bonusTeams = teamError ? [] : teams || [];
 }
 
-async function saveTopScorerPrediction() {
-  const input = document.querySelector("#topScorerInput");
-  const feedback = document.querySelector("#topScorerFeedback");
-  if (!state.sessionUserId) {
-    feedback.textContent = "Logg inn for å lagre toppscorertipset.";
+async function loadMyBonusPredictions() {
+  if (!state.supabaseReady || !state.sessionUserId) {
+    state.bonusPredictions = {};
     return;
   }
-  const { data, error } = await window.vmFeberSupabase.rpc("save_top_scorer_prediction", {
-    player_name: input.value.trim(),
+
+  const { data, error } = await window.vmFeberSupabase.rpc("get_my_bonus_predictions_resolved");
+  state.bonusPredictions = error
+    ? {}
+    : Object.fromEntries((data || []).map((prediction) => [prediction.question_slug, prediction]));
+}
+
+async function searchPlayersForQuestion(questionSlug, query) {
+  const results = document.querySelector(`[data-player-results="${questionSlug}"]`);
+  if (!results) return;
+  if (query.trim().length < 2) {
+    state.playerSearchResults[questionSlug] = [];
+    results.innerHTML = "";
+    return;
+  }
+
+  const { data, error } = await window.vmFeberSupabase.rpc("search_players", {
+    search_query: query.trim(),
+    only_active: true,
+    max_results: 12,
+  });
+  state.playerSearchResults[questionSlug] = error ? [] : data || [];
+  results.innerHTML = state.playerSearchResults[questionSlug]
+    .map(
+      (player) => `
+        <button type="button" class="player-result" data-select-player="${player.id}" data-question-slug="${questionSlug}">
+          <strong>${escapeHtml(player.player_name)}</strong>
+          <span>${escapeHtml(player.team_name)} · ${escapeHtml(player.player_position)}${player.club ? ` · ${escapeHtml(player.club)}` : ""}</span>
+        </button>
+      `,
+    )
+    .join("") || '<span class="microcopy">Ingen spillere funnet.</span>';
+}
+
+async function saveBonusPrediction(questionSlug) {
+  const row = document.querySelector(`[data-bonus-question="${questionSlug}"]`);
+  const feedback = row?.querySelector("[data-bonus-feedback]");
+  if (!state.sessionUserId) {
+    feedback.textContent = "Logg inn for å lagre bonustipset.";
+    return;
+  }
+
+  const answer = row.querySelector("[data-bonus-answer]")?.value?.trim() || "";
+  const { error } = await window.vmFeberSupabase.rpc("save_bonus_prediction", {
+    question_slug: questionSlug,
+    answer_value: answer,
   });
   if (error) {
     feedback.textContent = error.message;
     return;
   }
-  const saved = Array.isArray(data) ? data[0] : data;
-  state.topScorerPrediction = saved.answer;
-  feedback.textContent = "Toppscorertipset er lagret.";
+
+  const question = state.bonusQuestions.find((item) => item.slug === questionSlug);
+  let answerLabel = answer;
+  if (question?.question_type === "player") {
+    answerLabel = row.querySelector("[data-player-search]")?.value || answer;
+  } else if (question?.question_type === "team") {
+    answerLabel = row.querySelector("[data-bonus-answer]")?.selectedOptions?.[0]?.textContent || answer;
+  } else if (question?.question_type === "boolean") {
+    answerLabel = answer === "true" ? "Ja" : "Nei";
+  }
+  state.bonusPredictions[questionSlug] = { answer, answer_label: answerLabel };
+  feedback.textContent = "Bonustipset er lagret.";
 }
 
 function renderModes() {
@@ -729,31 +800,99 @@ function updatePredictionToolbar() {
     !shownMatches.length || Boolean(deadline && new Date() >= deadline);
 }
 
+function bonusQuestionInput(question, prediction) {
+  const answer = prediction?.answer || "";
+  const answerLabel = prediction?.answer_label || "";
+  if (question.question_type === "player") {
+    return `
+      <div class="player-picker">
+        <input type="search" data-player-search="${question.slug}" value="${escapeHtml(answerLabel)}"
+          placeholder="Søk etter spiller" autocomplete="off" />
+        <input type="hidden" data-bonus-answer value="${escapeHtml(answer)}" />
+        <div class="player-results" data-player-results="${question.slug}"></div>
+      </div>
+    `;
+  }
+  if (question.question_type === "team") {
+    return `
+      <select data-bonus-answer>
+        <option value="">Velg lag</option>
+        ${state.bonusTeams
+          .map(
+            (team) => `<option value="${team.fifa_code}" ${answer === team.fifa_code ? "selected" : ""}>${escapeHtml(team.display_name)}</option>`,
+          )
+          .join("")}
+      </select>
+    `;
+  }
+  if (question.question_type === "number") {
+    const minimum = question.validation_rule?.min ?? 0;
+    const maximum = question.validation_rule?.max ?? "";
+    return `<input type="number" data-bonus-answer min="${minimum}" ${maximum === "" ? "" : `max="${maximum}"`} value="${escapeHtml(answer)}" />`;
+  }
+  if (question.question_type === "boolean") {
+    return `
+      <select data-bonus-answer>
+        <option value="">Velg svar</option>
+        <option value="true" ${answer === "true" ? "selected" : ""}>Ja</option>
+        <option value="false" ${answer === "false" ? "selected" : ""}>Nei</option>
+      </select>
+    `;
+  }
+  return `<input type="text" data-bonus-answer value="${escapeHtml(answer)}" />`;
+}
+
+function renderBonusPanel() {
+  if (!state.bonusQuestions.length) {
+    return `
+      <div class="bonus-panel">
+        <h3>Bonusspørsmål</h3>
+        <p class="microcopy">Bonusspørsmålene må aktiveres i Supabase før de kan fylles ut.</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="bonus-panel">
+      <div class="bonus-heading">
+        <div>
+          <h3>Bonusspørsmål</h3>
+          <p class="microcopy">Leveres sammen med Full VM-tipset før samlet frist.</p>
+        </div>
+        <span class="tag">${state.bonusQuestions.length} spørsmål</span>
+      </div>
+      <div class="bonus-grid">
+        ${state.bonusQuestions
+          .map((question) => {
+            const prediction = state.bonusPredictions[question.slug];
+            return `
+              <article class="bonus-question" data-bonus-question="${question.slug}">
+                <div class="bonus-question-heading">
+                  <strong>${escapeHtml(question.label)}</strong>
+                  <span>${question.points} poeng</span>
+                </div>
+                ${question.description ? `<p>${escapeHtml(question.description)}</p>` : ""}
+                <div class="bonus-save-row">
+                  ${bonusQuestionInput(question, prediction)}
+                  <button type="button" data-save-bonus="${question.slug}" ${state.sessionUserId ? "" : "disabled"}>Lagre</button>
+                </div>
+                <span class="microcopy" data-bonus-feedback>
+                  ${prediction ? `Lagret: ${escapeHtml(prediction.answer_label || prediction.answer)}` : "Ikke lagret ennå."}
+                </span>
+              </article>
+            `;
+          })
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
 function renderMatches() {
   const projectedKnockoutMatchups = state.predictionMode === "full"
     ? buildProjectedKnockoutMatchups()
     : new Map();
-  const extra =
-    state.predictionMode === "full"
-      ? `
-        <div class="bonus-panel">
-          <h3>Bonus og sluttspill</h3>
-          <div class="bonus-grid">
-            <label>Toppscorer
-              <div class="bonus-save-row">
-                <input id="topScorerInput" value="${escapeHtml(state.topScorerPrediction)}" placeholder="Spiller" />
-                <button id="saveTopScorerButton">Lagre</button>
-              </div>
-              <span class="microcopy" id="topScorerFeedback">Lagres som del av Full VM-tipset.</span>
-            </label>
-            <div class="bonus-coming-soon">
-              <strong>Flere bonusspørsmål kommer</strong>
-              <span>Verdensmester, finalist og gruppevinnere legges inn når endelige poengregler er bestemt.</span>
-            </div>
-          </div>
-        </div>
-      `
-      : "";
+  const extra = state.predictionMode === "full" ? renderBonusPanel() : "";
 
   let lastDay = "";
   document.querySelector("#matchList").innerHTML = visibleMatches()
@@ -1868,7 +2007,8 @@ function bindEvents() {
     state.adminUsers = [];
     state.adminStatistics = null;
     state.testUsers = [];
-    state.topScorerPrediction = "";
+    state.bonusPredictions = {};
+    state.playerSearchResults = {};
     state.isAdmin = false;
     save();
     if (state.supabaseReady) {
@@ -1947,7 +2087,33 @@ function bindEvents() {
     if (event.target.matches("[data-score]")) showLiveGroupForMatchRow(event.target.closest("[data-match-id]"));
   });
   document.querySelector("#bonusPanel").addEventListener("click", (event) => {
-    if (event.target.closest("#saveTopScorerButton")) saveTopScorerPrediction();
+    const playerButton = event.target.closest("[data-select-player]");
+    if (playerButton) {
+      const row = playerButton.closest("[data-bonus-question]");
+      const player = state.playerSearchResults[playerButton.dataset.questionSlug]?.find(
+        (item) => item.id === playerButton.dataset.selectPlayer,
+      );
+      if (!row || !player) return;
+      row.querySelector("[data-player-search]").value = `${player.player_name} (${player.team_name})`;
+      row.querySelector("[data-bonus-answer]").value = player.id;
+      row.querySelector("[data-player-results]").innerHTML = "";
+      row.querySelector("[data-bonus-feedback]").textContent = "Valgt, men ikke lagret ennå.";
+      return;
+    }
+
+    const saveButton = event.target.closest("[data-save-bonus]");
+    if (saveButton) saveBonusPrediction(saveButton.dataset.saveBonus);
+  });
+  document.querySelector("#bonusPanel").addEventListener("input", (event) => {
+    const input = event.target.closest("[data-player-search]");
+    if (!input) return;
+    const questionSlug = input.dataset.playerSearch;
+    input.closest("[data-bonus-question]").querySelector("[data-bonus-answer]").value = "";
+    window.clearTimeout(state.playerSearchTimers[questionSlug]);
+    state.playerSearchTimers[questionSlug] = window.setTimeout(
+      () => searchPlayersForQuestion(questionSlug, input.value),
+      180,
+    );
   });
 
   document.querySelector("#joinLeagueButton").addEventListener("click", () => {
@@ -2004,7 +2170,8 @@ async function init() {
   await syncSupabaseSession();
   await loadMatches();
   await loadPredictions();
-  await loadTopScorerPrediction();
+  await loadBonusQuestions();
+  await loadMyBonusPredictions();
   await loadBackups();
   await loadLeagues();
   await loadAdminData();

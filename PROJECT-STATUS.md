@@ -48,8 +48,8 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
 - Ved helt lik poengsum, målforskjell og antall scorede mål mellom projiserte
   tredjeplasser bruker appen grupperekkefølge som stabil simulert avgjørelse.
   Tipsene inneholder ikke kortpoeng eller historisk FIFA-ranking.
-- Toppscorertips lagres som del av Full VM. Bonusfeltene for verdensmester,
-  finalist og gruppevinnere er ikke implementert ennå.
+- Generiske bonusspørsmål med lagvalg, spillersøk, tall og ja/nei er utviklet
+  lokalt. Supabase-filene og frontend må rulles ut og produksjonstestes.
 - Norske TV-kanaler er ikke lagt inn ennå.
 
 ## Databasemigrasjoner
@@ -75,6 +75,6 @@ separat i Supabase. GitHub/Vercel deployerer dem ikke automatisk.
 1. Bekreft utrulling og produksjonstest av den nyeste lokale pakken ved hjelp
    av `MORNING-CHECKLIST.md`.
 2. Bestem og implementer endelige sluttspillpoeng.
-3. Bestem og implementer resterende bonusspørsmål og bonuspoeng.
+3. Rull ut og produksjonstest bonusspørsmål og spillerregister.
 4. Legg inn norsk TV-kanal manuelt eller via en godkjent datakilde.
 5. Etabler og test sletting/anonymisering av e-postadresser før 26. juli 2026.
