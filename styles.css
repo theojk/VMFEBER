@@ -432,6 +432,53 @@ label {
   min-width: 0;
 }
 
+.leaderboard-controls {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  width: min(100%, 720px);
+}
+
+.scoreboard-tabs,
+.prediction-subnav {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+  background: var(--panel);
+}
+
+.prediction-subnav {
+  margin: -4px 0 16px;
+}
+
+.scoreboard-tab,
+.prediction-subtab {
+  flex: 0 0 auto;
+  min-height: 42px;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 14px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.scoreboard-tab.active,
+.prediction-subtab.active {
+  background: var(--primary-fill);
+  color: white;
+}
+
+.prediction-subtab span {
+  display: inline-block;
+  margin-left: 5px;
+  opacity: 0.78;
+  font-size: 0.72rem;
+}
+
 input,
 select,
 textarea {
@@ -631,6 +678,42 @@ textarea {
   gap: 20px;
 }
 
+.scoreboard-shortcuts {
+  margin-top: 28px;
+}
+
+.scoreboard-shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.scoreboard-shortcut-grid button {
+  display: grid;
+  gap: 5px;
+  min-height: 96px;
+  border: 1px solid var(--line);
+  border-radius: 14px 4px 14px 4px;
+  padding: 16px;
+  background: var(--panel);
+  color: var(--ink);
+  text-align: left;
+}
+
+.scoreboard-shortcut-grid button:hover {
+  border-color: var(--blue);
+  transform: translateY(-2px);
+}
+
+.scoreboard-shortcut-grid strong {
+  font-size: 1rem;
+}
+
+.scoreboard-shortcut-grid span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .mode-list,
 .rules-list,
 .match-list,
@@ -642,8 +725,49 @@ textarea {
   gap: 10px;
 }
 
-.norway-next {
+.norway-next,
+.today-matches {
   min-height: 130px;
+}
+
+.today-matches {
+  display: grid;
+  gap: 10px;
+}
+
+.today-match {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px 4px 12px 4px;
+  padding: 12px 14px;
+  background: var(--panel);
+}
+
+.today-match-heading,
+.today-match-teams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.today-match-heading strong {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.today-match-teams span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-weight: 850;
+}
+
+.today-match-teams span:last-child {
+  justify-content: flex-end;
+  text-align: right;
 }
 
 .projected-standings {
@@ -1528,6 +1652,36 @@ img.flag {
   font-size: 0.84rem;
 }
 
+.daily-score-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(54px, auto));
+  gap: 8px;
+  text-align: right;
+}
+
+.daily-score-pair span,
+.daily-score-pair small,
+.daily-score-pair strong {
+  display: block;
+}
+
+.daily-score-pair span {
+  border-left: 1px solid var(--line);
+  padding-left: 10px;
+}
+
+.daily-score-pair small {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.daily-score-pair strong {
+  font-size: 1.25rem;
+}
+
 .points {
   color: var(--green);
   font-size: 1.1rem;
@@ -1688,6 +1842,20 @@ img.flag {
 
   .leaderboard-filters {
     display: grid;
+    width: 100%;
+  }
+
+  .leaderboard-controls {
+    justify-items: stretch;
+    width: 100%;
+  }
+
+  .scoreboard-shortcut-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .scoreboard-tabs,
+  .prediction-subnav {
     width: 100%;
   }
 
@@ -2659,6 +2827,16 @@ html[data-theme="dark"] .sidebar {
     font-size: 0.58rem;
   }
 
+  .today-match-teams {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .today-match-teams span:last-child {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
   .match-row {
     width: 100%;
     min-width: 0;
@@ -2713,6 +2891,15 @@ html[data-theme="dark"] .sidebar {
 
   .leader-row {
     padding: 12px 10px;
+  }
+
+  .daily-score-pair {
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .daily-overview-row {
+    flex-wrap: wrap;
   }
 
   .rules-explainer-card {

@@ -28,3 +28,15 @@ Kjor disse i Supabase SQL Editor i denne rekkefolgen:
 
 Last deretter opp oppdatert `app.js`, `styles.css` og dokumentasjonsfiler til
 GitHub slik at Vercel publiserer frontenden.
+
+## Tipping og poengtavler
+
+- Full VM-tippingen har egne underfaner for kamptips, bonusspørsmål og
+  sluttspill.
+- Poengtavlesiden har tydelige faner for Full VM, Daglig samlet og I dag.
+- I dag viser både dagens poeng og samlet Daglig-poeng.
+- Full VM-poengtavlen summerer kamppoeng og bonuspoeng.
+- Oversikten har snarveier til alle tre poengtavlene.
+- Dagens kamper med gruppe/runde eller sluttspillfase erstatter neste
+  Norge-kamp på oversikten.
+- Ny migrasjon: `supabase-scoreboards-2026-setup.sql`.

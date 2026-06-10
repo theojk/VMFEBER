@@ -149,6 +149,7 @@ Kjør disse filene i denne rekkefølgen:
 1. `supabase-player-options-setup.sql`
 2. `supabase-bonus-questions-2026-setup.sql`
 3. `supabase-player-options-2026-seed.sql`
+4. `supabase-scoreboards-2026-setup.sql`
 
 Seed-filen er generert fra FIFAs offisielle troppsliste datert 10. juni 2026
 og inneholder 48 lag og 1 248 spillere. Den kan kjøres flere ganger uten å
@@ -158,6 +159,10 @@ en ny seed når FIFA publiserer en oppdatert troppsliste.
 Bonusspørsmålene er del av Full VM og bruker lagvalg, spillersøk, tallfelt og
 ja/nei-valg. Gruppeplasseringer avledes fortsatt fra kamptipsene og vises ikke
 som separate bonusfelt.
+
+`supabase-scoreboards-2026-setup.sql` gjør Full VM-poengtavlen til summen av
+kamppoeng og bonuspoeng. Den legger også til en I dag-visning som viser både
+dagens poeng og samlet Daglig-poeng per ligamedlem.
 
 Kjør `supabase-admin-statistics-setup.sql` for den adminbeskyttede
 statistikkoversikten. Hovedkonkurransen holdes utenfor tallene for opprettede

@@ -107,17 +107,17 @@
               <span class="metric-label">Neste kampdag levert</span>
             </article>
             <article class="metric">
-              <span class="metric-value" id="nextNorwayValue">–</span>
-              <span class="metric-label" id="nextNorwayLabel">Neste Norge-kamp</span>
+              <span class="metric-value" id="todayMatchesValue">0</span>
+              <span class="metric-label" id="todayMatchesLabel">Kamper i dag</span>
             </article>
           </div>
 
           <div class="section-grid">
             <section>
               <div class="section-heading">
-                <h3>Neste norske kamp</h3>
+                <h3>Dagens kamper</h3>
               </div>
-              <div class="norway-next" id="norwayNext"></div>
+              <div class="today-matches" id="todayMatches"></div>
             </section>
             <section>
               <div class="section-heading">
@@ -126,6 +126,19 @@
               <div class="rules-list" id="rulesList"></div>
             </section>
           </div>
+          <section class="scoreboard-shortcuts">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Følg konkurransen</p>
+                <h3>Poengtavler</h3>
+              </div>
+            </div>
+            <div class="scoreboard-shortcut-grid">
+              <button data-open-scoreboard="full-vm"><strong>Full VM</strong><span>Kamppoeng og bonuspoeng</span></button>
+              <button data-open-scoreboard="daglig-total"><strong>Daglig samlet</strong><span>Alle kampdager sammenlagt</span></button>
+              <button data-open-scoreboard="daglig-dato"><strong>I dag</strong><span>Dagens poeng og samlet stilling</span></button>
+            </div>
+          </section>
         </section>
 
         <section class="view" id="predictions">
@@ -139,6 +152,17 @@
           <p class="prediction-feedback" id="predictionFeedback">
             Logg inn for å lagre tipsene dine.
           </p>
+          <div class="prediction-subnav hidden" id="fullPredictionSubnav" role="tablist" aria-label="Velg del av Full VM-tipset">
+            <button class="prediction-subtab active" data-prediction-section="matches">
+              Kamptips <span id="matchTipsProgress">0/0</span>
+            </button>
+            <button class="prediction-subtab" data-prediction-section="bonus">
+              Bonusspørsmål <span id="bonusTipsProgress">0/0</span>
+            </button>
+            <button class="prediction-subtab" data-prediction-section="knockout">
+              Sluttspill <span id="knockoutTipsProgress">0/0</span>
+            </button>
+          </div>
           <div class="prediction-toolbar">
             <div>
               <strong id="predictionProgress">0 av 0 kamper tippet</strong>
@@ -217,14 +241,21 @@
         <section class="view" id="leaderboards">
           <div class="section-heading">
             <h3>Poengtavler</h3>
-            <div class="leaderboard-filters">
-              <select id="leaderboardSelect" aria-label="Velg liga"></select>
-              <select id="leaderboardModeSelect" aria-label="Velg konkurranse">
+            <div class="leaderboard-controls">
+              <div class="scoreboard-tabs" role="tablist" aria-label="Velg poengtavle">
+                <button class="scoreboard-tab active" data-leaderboard-mode="full-vm">Full VM</button>
+                <button class="scoreboard-tab" data-leaderboard-mode="daglig-total">Daglig samlet</button>
+                <button class="scoreboard-tab" data-leaderboard-mode="daglig-dato">I dag</button>
+              </div>
+              <div class="leaderboard-filters">
+                <select id="leaderboardSelect" aria-label="Velg liga"></select>
+                <select id="leaderboardModeSelect" class="hidden" aria-label="Velg konkurranse">
                 <option value="full-vm">Full VM totalt</option>
                 <option value="daglig-total">Daglig totalt</option>
                 <option value="daglig-dato">Daglig per dato</option>
-              </select>
-              <input id="leaderboardDate" class="hidden" type="date" aria-label="Velg dato" />
+                </select>
+                <input id="leaderboardDate" class="hidden" type="date" aria-label="Velg dato" />
+              </div>
             </div>
           </div>
           <p class="microcopy" id="leaderboardFeedback"></p>

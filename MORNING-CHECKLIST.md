@@ -80,6 +80,13 @@ synkroniseringen lagrer ordinær tid separat fra ekstraomganger og straffespark.
 19. Kontroller at Full VM-tips er sperret før samlet frist.
 20. Kontroller at Daglig-tips for en valgt dato er sperret før kl. 12:00 norsk
     tid og synlig etter fristen.
+21. Kontroller at Full VM har underfanene Kamptips, Bonusspørsmål og Sluttspill.
+22. Kontroller at oversikten viser dagens kamper med gruppe/runde eller
+    sluttspillfase.
+23. Kontroller poengtavlene Full VM, Daglig samlet og I dag.
+24. Kontroller at I dag viser både dagens poeng og samlet Daglig-poeng.
+25. Kontroller at Full VM-poengtavlen viser kamppoeng og bonuspoeng separat og
+    summerer dem riktig.
 
 Merk: poengberegningen bruker foreløpig stillingen etter 90 minutter.
 Bestem senere om riktig lag videre også skal gi egne sluttspillpoeng.

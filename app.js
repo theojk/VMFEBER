@@ -4,6 +4,7 @@ const state = {
   publicLeagues: [],
   leaderboardRows: [],
   predictionMode: "daily",
+  predictionSection: "matches",
   supabaseReady: Boolean(window.vmFeberSupabaseReady),
   sessionUserId: null,
   competitionIds: {},
@@ -107,7 +108,12 @@ function osloDateKey(date) {
 }
 
 function visibleMatches() {
-  if (state.predictionMode === "full" || !matches.some((match) => match.kickoffAt)) {
+  if (state.predictionMode === "full") {
+    if (state.predictionSection === "bonus") return [];
+    if (state.predictionSection === "knockout") return matches.filter((match) => !match.groupName);
+    return matches.filter((match) => match.groupName);
+  }
+  if (!matches.some((match) => match.kickoffAt)) {
     return matches;
   }
 
@@ -705,6 +711,7 @@ async function saveBonusPrediction(questionSlug) {
   }
   state.bonusPredictions[questionSlug] = { answer, answer_label: answerLabel };
   feedback.textContent = "Bonustipset er lagret.";
+  updatePredictionSubnav();
 }
 
 function renderModes() {
@@ -736,14 +743,6 @@ function countPredictions(slug, matchList) {
   return matchList.filter((match) => state.predictions[predictionKey(competitionId, match.id)]).length;
 }
 
-function nextNorwayMatch() {
-  return matches.find((match) => {
-    const isNorway = match.home.toLowerCase().includes("norway") || match.away.toLowerCase().includes("norway")
-      || match.home.toLowerCase().includes("norge") || match.away.toLowerCase().includes("norge");
-    return isNorway && (!match.kickoffAt || new Date(match.kickoffAt) > new Date());
-  });
-}
-
 function updateDashboard() {
   const fullCount = countPredictions("full-vm", matches);
   const dailyMatches = (() => {
@@ -757,7 +756,8 @@ function updateDashboard() {
   state.predictionMode = "daily";
   const dailyCount = dailyMatches.filter((match) => activePrediction(match.id)).length;
   state.predictionMode = previousMode;
-  const norway = nextNorwayMatch();
+  const today = osloDateKey(new Date());
+  const todayMatches = matches.filter((match) => match.kickoffAt && osloDateKey(match.kickoffAt) === today);
   const deadline = fullDeadline();
 
   document.querySelector("#fullProgressValue").textContent = `${fullCount}/${matches.length}`;
@@ -767,21 +767,23 @@ function updateDashboard() {
     ? `${fullCount + dailyCount} tips lagret`
     : "Logg inn for å tippe";
 
-  const norwayBox = document.querySelector("#norwayNext");
-  if (!norway) {
-    document.querySelector("#nextNorwayValue").textContent = "–";
-    norwayBox.innerHTML = '<p class="muted">Ingen kommende Norge-kamp funnet.</p>';
-    return;
-  }
-
-  document.querySelector("#nextNorwayValue").textContent = norway.date.split(" kl.")[0];
-  document.querySelector("#nextNorwayLabel").textContent = `${norway.home} – ${norway.away}`;
-  norwayBox.innerHTML = `
-    <article class="norway-match">
-      <div class="team">${norway.homeCrest ? `<img class="flag" src="${norway.homeCrest}" alt="" />` : ""}${norway.home}</div>
-      <div class="norway-match-time">${norway.date}</div>
-      <div class="team">${norway.awayCrest ? `<img class="flag" src="${norway.awayCrest}" alt="" />` : ""}${norway.away}</div>
-    </article>`;
+  document.querySelector("#todayMatchesValue").textContent = todayMatches.length;
+  document.querySelector("#todayMatchesLabel").textContent = todayMatches.length === 1 ? "Kamp i dag" : "Kamper i dag";
+  document.querySelector("#todayMatches").innerHTML = todayMatches.length
+    ? todayMatches.map((match) => `
+      <article class="today-match">
+        <div class="today-match-heading">
+          <span class="tag">${escapeHtml(stageLabel(match))}</span>
+          <strong>${escapeHtml(match.date.split(" kl.")[1] ? `kl. ${match.date.split(" kl.")[1]}` : match.date)}</strong>
+        </div>
+        <div class="today-match-teams">
+          <span>${match.homeCrest ? `<img class="flag" src="${match.homeCrest}" alt="" />` : ""}${escapeHtml(match.home)}</span>
+          <strong>–</strong>
+          <span>${match.awayCrest ? `<img class="flag" src="${match.awayCrest}" alt="" />` : ""}${escapeHtml(match.away)}</span>
+        </div>
+      </article>
+    `).join("")
+    : '<p class="muted">Ingen VM-kamper spilles i dag.</p>';
 }
 
 function updatePredictionToolbar() {
@@ -798,6 +800,26 @@ function updatePredictionToolbar() {
   document.querySelector("#predictionDeadline").textContent = `Frist: ${formatDeadline(deadline)}`;
   document.querySelector("#randomizeVisibleButton").disabled =
     !shownMatches.length || Boolean(deadline && new Date() >= deadline);
+  updatePredictionSubnav();
+}
+
+function updatePredictionSubnav() {
+  const subnav = document.querySelector("#fullPredictionSubnav");
+  const isFull = state.predictionMode === "full";
+  subnav.classList.toggle("hidden", !isFull);
+  document.querySelectorAll("[data-prediction-section]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.predictionSection === state.predictionSection);
+  });
+  if (!isFull) return;
+
+  const groupMatches = matches.filter((match) => match.groupName);
+  const knockoutMatches = matches.filter((match) => !match.groupName);
+  document.querySelector("#matchTipsProgress").textContent =
+    `${countPredictions("full-vm", groupMatches)}/${groupMatches.length}`;
+  document.querySelector("#knockoutTipsProgress").textContent =
+    `${countPredictions("full-vm", knockoutMatches)}/${knockoutMatches.length}`;
+  document.querySelector("#bonusTipsProgress").textContent =
+    `${Object.keys(state.bonusPredictions).length}/${state.bonusQuestions.length}`;
 }
 
 function bonusQuestionInput(question, prediction) {
@@ -892,7 +914,8 @@ function renderMatches() {
   const projectedKnockoutMatchups = state.predictionMode === "full"
     ? buildProjectedKnockoutMatchups()
     : new Map();
-  const extra = state.predictionMode === "full" ? renderBonusPanel() : "";
+  const isBonusSection = state.predictionMode === "full" && state.predictionSection === "bonus";
+  const extra = isBonusSection ? renderBonusPanel() : "";
 
   let lastDay = "";
   document.querySelector("#matchList").innerHTML = visibleMatches()
@@ -924,6 +947,9 @@ function renderMatches() {
     .join("");
 
   document.querySelector("#bonusPanel").innerHTML = extra;
+  document.querySelector(".prediction-toolbar").classList.toggle("hidden", isBonusSection);
+  document.querySelector("#matchList").classList.toggle("hidden", isBonusSection);
+  document.querySelector(".data-credit").classList.toggle("hidden", isBonusSection);
   document.querySelectorAll("#matchList [data-match-id]").forEach(updateKnockoutTiebreakVisibility);
   updatePredictionToolbar();
   renderProjectedGroupTables();
@@ -1350,8 +1376,11 @@ function renderProjectedGroupTables() {
   const thirdPanel = document.querySelector("#thirdPlacePanel");
   const groupedMatches = matches.filter((match) => match.groupName);
 
-  section.classList.toggle("hidden", state.predictionMode !== "full" || !groupedMatches.length);
-  if (state.predictionMode !== "full" || !groupedMatches.length) {
+  const showProjected = state.predictionMode === "full"
+    && state.predictionSection === "matches"
+    && groupedMatches.length;
+  section.classList.toggle("hidden", !showProjected);
+  if (!showProjected) {
     renderLiveGroupPanel();
     return;
   }
@@ -1408,7 +1437,8 @@ function renderLiveGroupPanel(groupName = state.activeLiveGroup) {
   const predictionsVisible = document.querySelector("#predictions").classList.contains("active");
   let groupMatches = matches.filter((match) => match.groupName === groupName);
 
-  if (!state.liveGroupEnabled || state.predictionMode !== "full" || !predictionsVisible) {
+  if (!state.liveGroupEnabled || state.predictionMode !== "full"
+    || state.predictionSection !== "matches" || !predictionsVisible) {
     panel.classList.add("hidden");
     return;
   }
@@ -1509,8 +1539,11 @@ async function renderLeaderboard() {
   const board = document.querySelector("#leaderboard");
   const isDailyDate = mode === "daglig-dato";
 
-  dateInput.classList.toggle("hidden", !isDailyDate);
-  if (isDailyDate && !dateInput.value) dateInput.value = osloDateKey(new Date());
+  dateInput.classList.add("hidden");
+  if (isDailyDate) dateInput.value = osloDateKey(new Date());
+  document.querySelectorAll("[data-leaderboard-mode]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.leaderboardMode === mode);
+  });
 
   if (!leagueId || !state.sessionUserId) {
     board.innerHTML = '<p class="muted">Logg inn og velg en liga for å se poengtavlen.</p>';
@@ -1520,11 +1553,16 @@ async function renderLeaderboard() {
 
   closeMemberPredictions();
   feedback.textContent = "Laster poengtavle...";
-  const { data, error } = await window.vmFeberSupabase.rpc("get_league_leaderboard", {
-    selected_league_id: leagueId,
-    competition_slug: mode === "full-vm" ? "full-vm" : "daglig",
-    match_day: isDailyDate ? dateInput.value : null,
-  });
+  const { data, error } = isDailyDate
+    ? await window.vmFeberSupabase.rpc("get_league_daily_overview", {
+      selected_league_id: leagueId,
+      selected_match_day: dateInput.value,
+    })
+    : await window.vmFeberSupabase.rpc("get_league_leaderboard", {
+      selected_league_id: leagueId,
+      competition_slug: mode === "full-vm" ? "full-vm" : "daglig",
+      match_day: null,
+    });
 
   if (error) {
     feedback.textContent = error.message;
@@ -1534,20 +1572,27 @@ async function renderLeaderboard() {
 
   state.leaderboardRows = data || [];
   feedback.textContent = mode === "full-vm"
-    ? "Full VM totalt"
+    ? "Full VM: kamppoeng og bonuspoeng"
     : isDailyDate
-      ? `Daglig poengtavle for ${dateInput.value}`
+      ? `Dagens poeng og Daglig samlet · ${dateInput.value}`
       : "Daglig totalt gjennom hele VM";
   board.innerHTML = state.leaderboardRows
     .map(
       (row) => `
-        <button class="leader-row" data-view-member="${row.user_id}" data-member-name="${escapeHtml(row.username)}">
+        <button class="leader-row ${isDailyDate ? "daily-overview-row" : ""}" data-view-member="${row.user_id}" data-member-name="${escapeHtml(row.username)}">
           <span class="rank">${row.rank}</span>
           <div class="leader-main">
             <strong>${escapeHtml(row.username)}</strong>
-            <span>${row.exact_results} eksakte resultater · ${row.scored_predictions} tips med poeng</span>
+            <span>${isDailyDate
+              ? `${row.today_exact_results} eksakte i dag · ${row.today_scored_predictions} tips med poeng`
+              : mode === "full-vm"
+                ? `${row.match_points} kamppoeng · ${row.bonus_points} bonuspoeng`
+                : `${row.exact_results} eksakte resultater · ${row.scored_predictions} tips med poeng`
+            }</span>
           </div>
-          <span class="points">${row.points}</span>
+          ${isDailyDate
+            ? `<div class="daily-score-pair"><span><small>I dag</small><strong>${row.today_points}</strong></span><span><small>Samlet</small><strong>${row.total_points}</strong></span></div>`
+            : `<span class="points">${row.points}</span>`}
         </button>
       `,
     )
@@ -2040,6 +2085,7 @@ function bindEvents() {
 
   document.querySelector("#defaultCompetition").addEventListener("change", (event) => {
     state.predictionMode = event.target.value;
+    if (state.predictionMode === "daily") state.predictionSection = "matches";
     localStorage.setItem("vmFeberDefaultCompetition", state.predictionMode);
     document.querySelectorAll(".segment").forEach((segment) => {
       segment.classList.toggle("active", segment.dataset.predictionMode === state.predictionMode);
@@ -2056,6 +2102,7 @@ function bindEvents() {
   document.querySelectorAll(".segment").forEach((button) => {
     button.addEventListener("click", () => {
       state.predictionMode = button.dataset.predictionMode;
+      if (state.predictionMode === "daily") state.predictionSection = "matches";
       document.querySelectorAll(".segment").forEach((segment) => segment.classList.remove("active"));
       button.classList.add("active");
       setPredictionFeedback(
@@ -2064,8 +2111,22 @@ function bindEvents() {
       renderMatches();
     });
   });
+  document.querySelector("#fullPredictionSubnav").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-prediction-section]");
+    if (!button) return;
+    state.predictionSection = button.dataset.predictionSection;
+    localStorage.setItem("vmFeberFullPredictionSection", state.predictionSection);
+    renderMatches();
+  });
 
   document.querySelector("#continueTipsButton").addEventListener("click", () => setView("predictions"));
+  document.querySelector(".scoreboard-shortcuts").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-open-scoreboard]");
+    if (!button) return;
+    document.querySelector("#leaderboardModeSelect").value = button.dataset.openScoreboard;
+    setView("leaderboards");
+    renderLeaderboard();
+  });
   document.querySelector("#randomizeVisibleButton").addEventListener("click", randomizeVisiblePredictions);
   document.querySelector("#saveVisibleButton").addEventListener("click", saveVisiblePredictions);
 
@@ -2138,6 +2199,7 @@ function bindEvents() {
     const button = event.target.closest("[data-open-leaderboard]");
     if (!button) return;
     document.querySelector("#leaderboardSelect").value = button.dataset.openLeaderboard;
+    document.querySelector("#leaderboardModeSelect").value = "full-vm";
     setView("leaderboards");
     renderLeaderboard();
   });
@@ -2149,6 +2211,12 @@ function bindEvents() {
   document.querySelector("#leaderboardSelect").addEventListener("change", renderLeaderboard);
   document.querySelector("#leaderboardModeSelect").addEventListener("change", renderLeaderboard);
   document.querySelector("#leaderboardDate").addEventListener("change", renderLeaderboard);
+  document.querySelector(".scoreboard-tabs").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-leaderboard-mode]");
+    if (!button) return;
+    document.querySelector("#leaderboardModeSelect").value = button.dataset.leaderboardMode;
+    renderLeaderboard();
+  });
   document.querySelector("#leaderboard").addEventListener("click", (event) => {
     const button = event.target.closest("[data-view-member]");
     if (button) showMemberPredictions(button.dataset.viewMember, button.dataset.memberName);
@@ -2166,6 +2234,7 @@ function bindEvents() {
 
 async function init() {
   state.predictionMode = localStorage.getItem("vmFeberDefaultCompetition") || state.predictionMode;
+  state.predictionSection = localStorage.getItem("vmFeberFullPredictionSection") || state.predictionSection;
   applyTheme();
   await syncSupabaseSession();
   await loadMatches();

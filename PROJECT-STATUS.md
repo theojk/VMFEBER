@@ -40,6 +40,10 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
 - Sluttspilltips med ordinær tid, ekstraomganger og straffespark.
 - Turneringsstudio-inspirert brukerflate med mobilmeny, mørk modus og valgfri
   flytende gruppetabell på desktop.
+- Full VM-tipping med egne underfaner for kamptips, bonusspørsmål og sluttspill.
+- Tydelige poengtavler for Full VM, Daglig samlet og I dag. I dag viser både
+  dagens og samlet Daglig-poeng.
+- Oversikten viser dagens kamper med gruppe/runde eller sluttspillfase.
 
 ## Viktige begrensninger
 
@@ -50,6 +54,8 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
   Tipsene inneholder ikke kortpoeng eller historisk FIFA-ranking.
 - Generiske bonusspørsmål med lagvalg, spillersøk, tall og ja/nei er utviklet
   lokalt. Supabase-filene og frontend må rulles ut og produksjonstestes.
+- Ny poengtavlemigrasjon `supabase-scoreboards-2026-setup.sql` må rulles ut og
+  produksjonstestes.
 - Norske TV-kanaler er ikke lagt inn ennå.
 
 ## Databasemigrasjoner

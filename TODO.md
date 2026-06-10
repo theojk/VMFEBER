@@ -42,6 +42,8 @@
     `supabase-player-options-2026-seed.sql` i denne rekkefølgen.
   - Kontroller spillersøk på Messi, Haaland og Mbappé.
   - Kontroller lagring av lag, spiller, tall og ja/nei før Full VM-fristen.
+  - Kjør `supabase-scoreboards-2026-setup.sql` og kontroller at Full VM
+    inkluderer bonuspoeng, og at I dag viser både dagens og samlet poeng.
 
 - [ ] Bestem endelig poengregel for sluttspill.
   - Ordinært kampresultat sammenlignes nå med stillingen etter 90 minutter.
