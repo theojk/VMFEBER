@@ -52,7 +52,7 @@ begin
             or exists (
               select 1 from public.matches selected_match
               where selected_match.id = prediction.match_id
-                and (selected_match.kickoff_at at time zone 'Europe/Oslo')::date = match_day
+                and (selected_match.kickoff_at at time zone 'America/New_York')::date = match_day
             )
           )
       ), 0)::bigint as member_match_points,
@@ -76,7 +76,7 @@ begin
             or exists (
               select 1 from public.matches selected_match
               where selected_match.id = prediction.match_id
-                and (selected_match.kickoff_at at time zone 'Europe/Oslo')::date = match_day
+                and (selected_match.kickoff_at at time zone 'America/New_York')::date = match_day
             )
           )
       ), 0)::bigint as member_exact_results,
@@ -93,7 +93,7 @@ begin
             or exists (
               select 1 from public.matches selected_match
               where selected_match.id = prediction.match_id
-                and (selected_match.kickoff_at at time zone 'Europe/Oslo')::date = match_day
+                and (selected_match.kickoff_at at time zone 'America/New_York')::date = match_day
             )
           )
       ), 0)::bigint as member_scored_predictions
@@ -120,7 +120,7 @@ $$;
 
 create or replace function public.get_league_daily_overview(
   selected_league_id uuid,
-  selected_match_day date default ((now() at time zone 'Europe/Oslo')::date)
+  selected_match_day date default ((now() at time zone 'America/New_York')::date)
 )
 returns table (
   rank bigint,
@@ -150,16 +150,16 @@ begin
       profile.id as member_user_id,
       profile.username as member_username,
       coalesce(sum(prediction.points) filter (
-        where (match.kickoff_at at time zone 'Europe/Oslo')::date = selected_match_day
+        where (match.kickoff_at at time zone 'America/New_York')::date = selected_match_day
       ), 0)::bigint as member_today_points,
       coalesce(sum(prediction.points), 0)::bigint as member_total_points,
       count(prediction.id) filter (
         where prediction.points = 3
-          and (match.kickoff_at at time zone 'Europe/Oslo')::date = selected_match_day
+          and (match.kickoff_at at time zone 'America/New_York')::date = selected_match_day
       )::bigint as member_today_exact_results,
       count(prediction.id) filter (
         where prediction.points > 0
-          and (match.kickoff_at at time zone 'Europe/Oslo')::date = selected_match_day
+          and (match.kickoff_at at time zone 'America/New_York')::date = selected_match_day
       )::bigint as member_today_scored_predictions
     from public.league_members membership
     join public.profiles profile on profile.id = membership.user_id

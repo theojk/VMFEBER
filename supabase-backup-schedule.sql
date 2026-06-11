@@ -5,6 +5,10 @@ create extension if not exists pg_cron;
 create extension if not exists pg_net;
 create extension if not exists supabase_vault;
 
+select cron.unschedule(jobid)
+from cron.job
+where jobname in ('vm-feber-daglig-backup', 'vm-feber-full-vm-backup');
+
 select vault.create_secret(
   'https://DIN-PROSJEKT-ID.supabase.co',
   'vm_feber_project_url'
@@ -20,10 +24,10 @@ select vault.create_secret(
   'vm_feber_backup_cron_secret'
 );
 
--- Kl. 10:00 UTC tilsvarer kl. 12:00 i Norge under VM 2026.
+-- Kontrollerer daglig backup hvert 15. minutt. Funksjonen venter til siste kampstart for USA-kampdagen.
 select cron.schedule(
   'vm-feber-daglig-backup',
-  '0 10 * * *',
+  '*/15 * * * *',
   $$
   select net.http_post(
     url := (select decrypted_secret from vault.decrypted_secrets where name = 'vm_feber_project_url')

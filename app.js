@@ -28,13 +28,13 @@ const state = {
 const competitions = [
   {
     title: "Full VM-konkurranse",
-    deadline: "2 timer før første kamp",
+    deadline: "Kamp 1–2: kampstart · resten: kamp 3",
     description:
-      "Alle kamper, gruppeplasseringer, sluttspill, vinner og bonusspørsmål leveres samlet før turneringen starter.",
+      "Kamp 1 og 2 låses ved egen kampstart. Resten, inkludert bonusspørsmål, låses ved kampstart i kamp 3.",
   },
   {
     title: "Daglig konkurranse",
-    deadline: "Kl. 12:00 norsk tid hver kampdag",
+    deadline: "Ved kampstart for hver kamp",
     description:
       "Dagens kamper tippes dag for dag. Denne får egen poengtavle, separat fra full VM.",
   },
@@ -57,7 +57,7 @@ let matches = [
     homeColor: "#ba1f33",
     awayColor: "#f5d038",
     date: "15. juni",
-    deadline: "Full VM: 19:00 · Daglig: 12:00",
+    deadline: "Daglig: kampstart",
   },
   {
     id: "m2",
@@ -66,7 +66,7 @@ let matches = [
     homeColor: "#244aa5",
     awayColor: "#f5f5f5",
     date: "15. juni",
-    deadline: "Full VM: 19:00 · Daglig: 12:00",
+    deadline: "Daglig: kampstart",
   },
   {
     id: "m3",
@@ -75,7 +75,7 @@ let matches = [
     homeColor: "#75bde8",
     awayColor: "#111111",
     date: "16. juni",
-    deadline: "Full VM: 19:00 · Daglig: 12:00",
+    deadline: "Daglig: kampstart",
   },
 ];
 
@@ -98,13 +98,47 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function osloDateKey(date) {
+const TOURNAMENT_TIME_ZONE = "America/New_York";
+
+function tournamentDateKey(date) {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Oslo",
+    timeZone: TOURNAMENT_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).format(new Date(date));
+}
+
+function formatTournamentDay(date) {
+  return new Intl.DateTimeFormat("nb-NO", {
+    timeZone: TOURNAMENT_TIME_ZONE,
+    day: "numeric",
+    month: "long",
+  }).format(new Date(date));
+}
+
+function chronologicalMatches() {
+  return [...matches]
+    .filter((match) => match.kickoffAt)
+    .sort((a, b) => new Date(a.kickoffAt) - new Date(b.kickoffAt) || a.number - b.number);
+}
+
+function fullDeadline() {
+  const thirdMatch = chronologicalMatches()[2];
+  return thirdMatch ? new Date(thirdMatch.kickoffAt) : null;
+}
+
+function predictionDeadline(match) {
+  if (!match?.kickoffAt) return null;
+  if (state.predictionMode === "daily") return new Date(match.kickoffAt);
+
+  const matchIndex = chronologicalMatches().findIndex((item) => item.id === match.id);
+  return matchIndex >= 0 && matchIndex < 2 ? new Date(match.kickoffAt) : fullDeadline();
+}
+
+function isMatchLocked(match) {
+  const deadline = predictionDeadline(match);
+  return Boolean(deadline && new Date() >= deadline);
 }
 
 function visibleMatches() {
@@ -117,27 +151,15 @@ function visibleMatches() {
     return matches;
   }
 
-  const today = osloDateKey(new Date());
-  const todayMatches = matches.filter((match) => osloDateKey(match.kickoffAt) === today);
+  const today = tournamentDateKey(new Date());
+  const todayMatches = matches.filter((match) => tournamentDateKey(match.kickoffAt) === today);
   if (todayMatches.length) return todayMatches;
 
   const nextMatch = matches.find((match) => new Date(match.kickoffAt) > new Date());
   if (!nextMatch) return [];
 
-  const nextMatchDay = osloDateKey(nextMatch.kickoffAt);
-  return matches.filter((match) => osloDateKey(match.kickoffAt) === nextMatchDay);
-}
-
-function fullDeadline() {
-  const firstKickoff = matches.find((match) => match.kickoffAt)?.kickoffAt;
-  return firstKickoff ? new Date(new Date(firstKickoff).getTime() - 2 * 60 * 60 * 1000) : null;
-}
-
-function dailyDeadline(matchList = visibleMatches()) {
-  const kickoff = matchList.find((match) => match.kickoffAt)?.kickoffAt;
-  if (!kickoff) return null;
-  const date = osloDateKey(kickoff);
-  return new Date(`${date}T10:00:00.000Z`);
+  const nextMatchDay = tournamentDateKey(nextMatch.kickoffAt);
+  return matches.filter((match) => tournamentDateKey(match.kickoffAt) === nextMatchDay);
 }
 
 function formatDeadline(deadline) {
@@ -167,7 +189,7 @@ async function loadMatches() {
     awayColor: "#e9efe7",
     date: formatKickoff(match.kickoff_at),
     kickoffAt: match.kickoff_at,
-    deadline: "Full VM: samlet frist · Daglig: kl. 12:00",
+    deadline: "Daglig: kampstart",
   }));
 }
 
@@ -302,6 +324,11 @@ async function savePrediction(matchId) {
   }
 
   const row = document.querySelector(`[data-match-id="${matchId}"]`);
+  const match = matches.find((item) => item.id === matchId);
+  if (isMatchLocked(match)) {
+    setPredictionFeedback("Fristen for denne kampen har utløpt.", "error");
+    return false;
+  }
   const homeScore = row.querySelector('[data-score="home"]').value;
   const awayScore = row.querySelector('[data-score="away"]').value;
   const regularTie = row.querySelector("[data-tiebreak]") && Number(homeScore) === Number(awayScore);
@@ -372,7 +399,8 @@ async function savePrediction(matchId) {
 async function saveVisiblePredictions() {
   const button = document.querySelector("#saveVisibleButton");
   const rows = [...document.querySelectorAll("[data-match-id]")].filter((row) => {
-    return row.querySelector('[data-score="home"]').value !== ""
+    return !isMatchLocked(matches.find((match) => match.id === row.dataset.matchId))
+      && row.querySelector('[data-score="home"]').value !== ""
       && row.querySelector('[data-score="away"]').value !== "";
   });
 
@@ -404,18 +432,13 @@ function randomScore() {
 }
 
 function randomizeVisiblePredictions() {
-  const rows = [...document.querySelectorAll("#matchList [data-match-id]")];
-  const deadline = state.predictionMode === "full" ? fullDeadline() : dailyDeadline(visibleMatches());
+  const rows = [...document.querySelectorAll("#matchList [data-match-id]")]
+    .filter((row) => !isMatchLocked(matches.find((match) => match.id === row.dataset.matchId)));
 
   if (!rows.length) {
     setPredictionFeedback("Ingen synlige kamper å fylle ut.", "error");
     return;
   }
-  if (deadline && new Date() >= deadline) {
-    setPredictionFeedback("Fristen er utløpt. Disse tipsene kan ikke endres.", "error");
-    return;
-  }
-
   const hasExistingScores = rows.some((row) =>
     [...row.querySelectorAll("[data-score]")].some((input) => input.value !== ""),
   );
@@ -689,6 +712,10 @@ async function saveBonusPrediction(questionSlug) {
     feedback.textContent = "Logg inn for å lagre bonustipset.";
     return;
   }
+  if (fullDeadline() && new Date() >= fullDeadline()) {
+    feedback.textContent = "Full VM-fristen har utløpt.";
+    return;
+  }
 
   const answer = row.querySelector("[data-bonus-answer]")?.value?.trim() || "";
   const { error } = await window.vmFeberSupabase.rpc("save_bonus_prediction", {
@@ -756,13 +783,13 @@ function updateDashboard() {
   state.predictionMode = "daily";
   const dailyCount = dailyMatches.filter((match) => activePrediction(match.id)).length;
   state.predictionMode = previousMode;
-  const today = osloDateKey(new Date());
-  const todayMatches = matches.filter((match) => match.kickoffAt && osloDateKey(match.kickoffAt) === today);
+  const today = tournamentDateKey(new Date());
+  const todayMatches = matches.filter((match) => match.kickoffAt && tournamentDateKey(match.kickoffAt) === today);
   const deadline = fullDeadline();
 
   document.querySelector("#fullProgressValue").textContent = `${fullCount}/${matches.length}`;
   document.querySelector("#dailyProgressValue").textContent = `${dailyCount}/${dailyMatches.length}`;
-  document.querySelector("#heroDeadline").textContent = `Full VM-frist: ${formatDeadline(deadline)}. Daglige tips låses kl. 12:00 norsk tid.`;
+  document.querySelector("#heroDeadline").textContent = `Full VM-frist for kamp 3 og resten: ${formatDeadline(deadline)}. Daglige tips låses ved kampstart.`;
   document.querySelector("#saveStatus").textContent = state.sessionUserId
     ? `${fullCount + dailyCount} tips lagret`
     : "Logg inn for å tippe";
@@ -793,13 +820,17 @@ function updatePredictionToolbar() {
   const inheritedCount = state.predictionMode === "daily"
     ? shownMatches.filter((match) => activePrediction(match.id)?.inheritedFromFull).length
     : 0;
-  const deadline = state.predictionMode === "full" ? fullDeadline() : dailyDeadline(shownMatches);
+  const hasOpenMatches = shownMatches.some((match) => !isMatchLocked(match));
 
   document.querySelector("#predictionProgress").textContent =
     `${explicitCount} av ${shownMatches.length} kamper lagret${inheritedCount ? ` · ${inheritedCount} arves fra Full VM` : ""}`;
-  document.querySelector("#predictionDeadline").textContent = `Frist: ${formatDeadline(deadline)}`;
+  document.querySelector("#predictionDeadline").textContent = state.predictionMode === "daily"
+    ? "Frist: kampstart for hver kamp"
+    : `Samlet frist fra kamp 3: ${formatDeadline(fullDeadline())}`;
   document.querySelector("#randomizeVisibleButton").disabled =
-    !shownMatches.length || Boolean(deadline && new Date() >= deadline);
+    !shownMatches.length || !hasOpenMatches;
+  document.querySelector("#saveVisibleButton").disabled =
+    !state.sessionUserId || !shownMatches.length || !hasOpenMatches;
   updatePredictionSubnav();
 }
 
@@ -874,12 +905,13 @@ function renderBonusPanel() {
     `;
   }
 
+  const locked = Boolean(fullDeadline() && new Date() >= fullDeadline());
   return `
     <div class="bonus-panel">
       <div class="bonus-heading">
         <div>
           <h3>Bonusspørsmål</h3>
-          <p class="microcopy">Leveres sammen med Full VM-tipset før samlet frist.</p>
+          <p class="microcopy">Kan endres frem til kampstart i kamp 3.</p>
         </div>
         <span class="tag">${state.bonusQuestions.length} spørsmål</span>
       </div>
@@ -896,7 +928,7 @@ function renderBonusPanel() {
                 ${question.description ? `<p>${escapeHtml(question.description)}</p>` : ""}
                 <div class="bonus-save-row">
                   ${bonusQuestionInput(question, prediction)}
-                  <button type="button" data-save-bonus="${question.slug}" ${state.sessionUserId ? "" : "disabled"}>Lagre</button>
+                  <button type="button" data-save-bonus="${question.slug}" ${state.sessionUserId && !locked ? "" : "disabled"}>${locked ? "Låst" : "Lagre"}</button>
                 </div>
                 <span class="microcopy" data-bonus-feedback>
                   ${prediction ? `Lagret: ${escapeHtml(prediction.answer_label || prediction.answer)}` : "Ikke lagret ennå."}
@@ -920,26 +952,33 @@ function renderMatches() {
   let lastDay = "";
   document.querySelector("#matchList").innerHTML = visibleMatches()
     .map((match) => {
-        const day = match.kickoffAt ? osloDateKey(match.kickoffAt) : match.date;
-        const heading = day !== lastDay ? `<div class="match-day">${match.date.split(" kl.")[0]}</div>` : "";
+        const day = match.kickoffAt ? tournamentDateKey(match.kickoffAt) : match.date;
+        const heading = day !== lastDay
+          ? `<div class="match-day">${match.kickoffAt ? formatTournamentDay(match.kickoffAt) : match.date}</div>`
+          : "";
         lastDay = day;
         const prediction = activePrediction(match.id);
         const projectedMatchup = projectedKnockoutMatchups.get(match.number);
         const home = projectedMatchup?.home || { name: match.home, crest: match.homeCrest, origin: "" };
         const away = projectedMatchup?.away || { name: match.away, crest: match.awayCrest, origin: "" };
+        const locked = isMatchLocked(match);
+        const disabled = locked ? "disabled" : "";
+        const deadlineLabel = state.predictionMode === "daily"
+          ? "Frist: kampstart"
+          : `Frist: ${formatDeadline(predictionDeadline(match))}`;
         return `${heading}
         <article class="match-row" data-match-id="${match.id}" data-match-number="${match.number || ""}">
           <div class="team" data-projected-team="home">${home.crest ? `<img class="flag" src="${home.crest}" alt="" />` : `<span class="flag" style="background:${match.homeColor}"></span>`}<span class="team-details"><strong>${escapeHtml(home.name)}</strong>${home.origin ? `<small>${escapeHtml(home.origin)}</small>` : ""}</span></div>
           <div class="score-inputs">
-            <input type="number" min="0" data-score="home" value="${prediction?.home_score ?? ""}" aria-label="${match.home} mål" />
-            <input type="number" min="0" data-score="away" value="${prediction?.away_score ?? ""}" aria-label="${match.away} mål" />
+            <input type="number" min="0" data-score="home" value="${prediction?.home_score ?? ""}" aria-label="${match.home} mål" ${disabled} />
+            <input type="number" min="0" data-score="away" value="${prediction?.away_score ?? ""}" aria-label="${match.away} mål" ${disabled} />
           </div>
           <div class="team" data-projected-team="away">${away.crest ? `<img class="flag" src="${away.crest}" alt="" />` : `<span class="flag" style="background:${match.awayColor}"></span>`}<span class="team-details"><strong>${escapeHtml(away.name)}</strong>${away.origin ? `<small>${escapeHtml(away.origin)}</small>` : ""}</span></div>
-          <div class="deadline"><span class="match-stage-label">${escapeHtml(stageLabel(match))}</span><br />${match.date}<br />${match.deadline}</div>
-          <button class="save-prediction" data-save-prediction="${match.id}" ${state.sessionUserId ? "" : "disabled"}>
-            ${prediction?.inheritedFromFull ? "Bruk Full VM" : prediction ? "Lagret" : "Lagre"}
+          <div class="deadline"><span class="match-stage-label">${escapeHtml(stageLabel(match))}</span><br />${match.date}<br />${deadlineLabel}</div>
+          <button class="save-prediction" data-save-prediction="${match.id}" ${state.sessionUserId && !locked ? "" : "disabled"}>
+            ${locked ? "Låst" : prediction?.inheritedFromFull ? "Bruk Full VM" : prediction ? "Lagret" : "Lagre"}
           </button>
-          ${knockoutTiebreakFields(match, prediction)}
+          ${knockoutTiebreakFields(match, prediction, locked)}
         </article>
       `;
       },
@@ -988,16 +1027,17 @@ function isKnockoutMatch(match) {
   return Boolean(match.stage && match.stage !== "GROUP_STAGE");
 }
 
-function knockoutTiebreakFields(match, prediction) {
+function knockoutTiebreakFields(match, prediction, locked = false) {
   if (!isKnockoutMatch(match)) return "";
+  const disabled = locked ? "disabled" : "";
   return `
     <div class="knockout-tiebreak hidden" data-tiebreak>
       <span>Stilling etter 120 min</span>
       <div class="tiebreak-score-group">
         <div class="tiebreak-labels"><small>Hjemme</small><small>Borte</small></div>
         <div class="score-inputs">
-          <input type="number" min="0" data-extra-score="home" value="${prediction?.extra_time_home_score ?? ""}" aria-label="Hjemmelag etter ekstraomganger" />
-          <input type="number" min="0" data-extra-score="away" value="${prediction?.extra_time_away_score ?? ""}" aria-label="Bortelag etter ekstraomganger" />
+          <input type="number" min="0" data-extra-score="home" value="${prediction?.extra_time_home_score ?? ""}" aria-label="Hjemmelag etter ekstraomganger" ${disabled} />
+          <input type="number" min="0" data-extra-score="away" value="${prediction?.extra_time_away_score ?? ""}" aria-label="Bortelag etter ekstraomganger" ${disabled} />
         </div>
       </div>
       <div class="penalty-tiebreak hidden" data-penalty-tiebreak>
@@ -1005,8 +1045,8 @@ function knockoutTiebreakFields(match, prediction) {
         <div class="tiebreak-score-group">
           <div class="tiebreak-labels"><small>Hjemme</small><small>Borte</small></div>
           <div class="score-inputs">
-            <input type="number" min="0" data-penalty-score="home" value="${prediction?.penalty_home_score ?? ""}" aria-label="Hjemmelag straffespark" />
-            <input type="number" min="0" data-penalty-score="away" value="${prediction?.penalty_away_score ?? ""}" aria-label="Bortelag straffespark" />
+            <input type="number" min="0" data-penalty-score="home" value="${prediction?.penalty_home_score ?? ""}" aria-label="Hjemmelag straffespark" ${disabled} />
+            <input type="number" min="0" data-penalty-score="away" value="${prediction?.penalty_away_score ?? ""}" aria-label="Bortelag straffespark" ${disabled} />
           </div>
         </div>
       </div>
@@ -1381,6 +1421,9 @@ function renderProjectedGroupTables() {
     && groupedMatches.length;
   section.classList.toggle("hidden", !showProjected);
   if (!showProjected) {
+    if (state.predictionMode === "full") {
+      updateProjectedKnockoutMatchCards(projectedStandingsByGroup());
+    }
     renderLiveGroupPanel();
     return;
   }
@@ -1540,7 +1583,7 @@ async function renderLeaderboard() {
   const isDailyDate = mode === "daglig-dato";
 
   dateInput.classList.add("hidden");
-  if (isDailyDate) dateInput.value = osloDateKey(new Date());
+  if (isDailyDate) dateInput.value = tournamentDateKey(new Date());
   document.querySelectorAll("[data-leaderboard-mode]").forEach((button) => {
     button.classList.toggle("active", button.dataset.leaderboardMode === mode);
   });

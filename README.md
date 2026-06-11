@@ -11,8 +11,9 @@ Se [PROJECT-STATUS.md](PROJECT-STATUS.md) for prosjektstatus,
 - Mobilvennlig webapp som kan åpnes direkte i nettleser
 - Magic-link-innlogging med Supabase
 - To konkurranseformer:
-  - Full VM-konkurranse med samlet frist før turneringsstart
-  - Daglig konkurranse med frist kl. 12:00 norsk tid
+  - Full VM: kamp 1–2 låses ved egen kampstart, resten ved kampstart i kamp 3
+  - Daglig konkurranse med frist ved kampstart for hver kamp
+  - Kampdag og «dagens kamper» følger `America/New_York`
 - Private og offentlige ligaer med kode, beskrivelse og eierstyrt redigering
 - Poengtavler som bare vises for ligaer brukeren er medlem av
 - Klikkbart tipsinnsyn mellom ligamedlemmer etter relevant frist
