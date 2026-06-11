@@ -13,6 +13,7 @@
 - «Dagens kamper», daglig tipping og dagens poengtavle følger
   `America/New_York`.
 - Kampstart vises fortsatt i norsk tid.
+- Oversikt viser nå en egen Nyheter-fane med de nye fristreglene.
 
 ## Sluttspill
 

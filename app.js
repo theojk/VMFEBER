@@ -1884,6 +1884,7 @@ function renderUser() {
   const loginPanel = document.querySelector("#loginPanel");
   const userPanel = document.querySelector("#userPanel");
   const feedback = document.querySelector("#loginFeedback");
+  document.querySelector("#deadlineNewsPanel").classList.toggle("hidden", !state.user);
   document.querySelectorAll(".admin-only").forEach((element) => {
     element.classList.toggle("hidden", !state.isAdmin);
   });

@@ -2276,6 +2276,94 @@ body {
   width: 18px;
 }
 
+.news-panel {
+  position: relative;
+  margin: 0 0 24px;
+  border: 1px solid rgba(215, 25, 63, 0.28);
+  border-radius: 18px 6px 18px 6px;
+  background: linear-gradient(135deg, rgba(255, 245, 247, 0.98), var(--panel));
+  box-shadow: 0 14px 34px rgba(7, 31, 70, 0.1);
+}
+
+.news-panel-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  margin: -1px 0 0 -1px;
+  border-radius: 18px 0 12px 0;
+  padding: 0 16px;
+  background: var(--danger-fill);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.news-panel-tab svg {
+  width: 16px;
+}
+
+.news-panel-content {
+  padding: 20px 22px 22px;
+}
+
+.news-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.news-panel-heading h3 {
+  margin: 3px 0 0;
+  font-size: 1.45rem;
+}
+
+.news-panel-content > p {
+  max-width: 850px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.news-badge {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: rgba(215, 25, 63, 0.1);
+  color: var(--red);
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.news-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.news-rule-grid article {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px 4px 12px 4px;
+  padding: 13px 14px;
+  background: var(--panel);
+}
+
+.news-rule-grid strong {
+  color: var(--ink);
+}
+
+.news-rule-grid span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .metric-grid {
   gap: 16px;
   margin-top: -8px;
@@ -2807,6 +2895,22 @@ html[data-theme="dark"] .sidebar {
 
   .hero-action {
     justify-content: center;
+  }
+
+  .news-panel-content {
+    padding: 17px 15px 18px;
+  }
+
+  .news-panel-heading {
+    display: grid;
+  }
+
+  .news-badge {
+    justify-self: start;
+  }
+
+  .news-rule-grid {
+    grid-template-columns: 1fr;
   }
 
   .metric-grid {
