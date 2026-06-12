@@ -28,6 +28,20 @@
   én gang per time mens aktuelle kamper fortsatt ikke er ferdige.
 - Admin-knappen for manuell oppdatering beholdes som reserve.
 
+## Ny kamppoengregel
+
+- Eksakt resultat gir 3 poeng.
+- Riktig målforskjell, men ikke eksakt resultat, gir 2 poeng.
+- Riktig HUB, men ikke riktig målforskjell, gir 1 poeng.
+- `supabase-goal-difference-points-setup.sql` rekalkulerer også ferdige kamper.
+
+## Resultater i tippingen
+
+- Ferdige kamper viser faktisk resultat i både Daglig og Full VM.
+- Poeng vises i stedet for «Låst»: mørkegrønn for 3, lysegrønn for 2,
+  gul for 1 og rød for 0 poeng.
+- Adminsynkronisering oppdaterer kampkort og poengvisning uten sidelasting.
+
 ## Utrulling
 
 1. Kjør `supabase-scoreboards-2026-setup.sql` i Supabase SQL Editor.
