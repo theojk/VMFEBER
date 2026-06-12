@@ -92,6 +92,25 @@ eller GitHub.
 5. Deploy funksjonen `sync-world-cup`.
 6. Kall funksjonen mens du er innlogget som admin for a fylle `matches`.
 
+### Automatisk resultat- og poengoppdatering
+
+`sync-world-cup` henter kampstatus og resultater, og beregner deretter poeng
+for alle ferdige kamper. Admin-knappen kan fortsatt brukes som reserve.
+
+For automatisk kjøring:
+
+1. Opprett en lang tilfeldig hemmelig verdi.
+2. Lagre verdien som Edge Function-secret `SYNC_CRON_SECRET`.
+3. Deploy den oppdaterte `supabase/functions/sync-world-cup/index.ts`.
+4. Fyll inn samme hemmelige verdi og prosjektverdiene i
+   `supabase-sync-schedule.sql`.
+5. Kjor `supabase-sync-schedule.sql` i Supabase SQL Editor.
+
+Tidsplanen vekker funksjonen hvert 15. minutt, men bruker bare football-data.org
+når en kamp har pågått i minst to timer. Dersom kampen fortsatt ikke er
+`finished`, gjøres neste API-kontroll tidligst én time senere. Poeng beregnes
+etter hver faktiske resultatsynkronisering.
+
 ## Lagring av tips
 
 Kjor `supabase-predictions-setup.sql` i Supabase SQL Editor. Den oppretter
@@ -173,9 +192,10 @@ Kjør `supabase-league-descriptions-setup.sql` for valgfrie ligabeskrivelser.
 Kun ligaeieren kan endre beskrivelsen etter at ligaen er opprettet.
 
 Poengtavlene summerer feltet `points` i lagrede kamptips. Kampresultater ma
-derfor poengberegnes etter synkronisering for at listene skal fa poeng. Den
-oppdaterte Edge Function `sync-world-cup` beregner automatisk 3 poeng for
-eksakt resultat og 1 poeng for riktig kamputfall etter synkronisering.
+derfor poengberegnes etter synkronisering for at listene skal fa poeng. Edge
+Function `sync-world-cup` beregner 3 poeng for eksakt resultat og 1 poeng for
+riktig kamputfall etter synkronisering. `supabase-sync-schedule.sql` må være
+aktivert for at dette skal skje automatisk.
 
 ## Automatisk backup av alle tips
 

@@ -1,6 +1,6 @@
 # VM FEBER - prosjektstatus
 
-Sist oppdatert: 9. juni 2026.
+Sist oppdatert: 12. juni 2026.
 
 Les `HANDOFF-2026-06-09.md` først ved oppstart i en ny chat. Den skiller mellom
 bekreftet produksjonsstatus og funksjoner som er utviklet lokalt, men fortsatt
@@ -32,7 +32,9 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
 - Synlig tilbakemeldingsadresse i bunnteksten.
 - Testbrukerstøtte er skrevet, men databaseoppsettet bør verifiseres i
   produksjon før funksjonen regnes som ferdig utrullet.
-- Automatisk kamp- og resultatsynkronisering.
+- Kamp- og resultatsynkronisering med poengberegning. Kampstyrt automatikk er
+  klargjort: første kontroll to timer etter kampstart, deretter høyst én
+  API-kontroll per time til alle aktuelle kamper er ferdige.
 - Automatiske tipsbackuper og backup-e-post.
 - Projiserte tabeller for alle 12 grupper og rangering av tredjeplasser.
 - Projisert sluttspill som følger brukerens tips og FIFAs offisielle Annex C-
@@ -56,6 +58,8 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
   lokalt. Supabase-filene og frontend må rulles ut og produksjonstestes.
 - Ny poengtavlemigrasjon `supabase-scoreboards-2026-setup.sql` må rulles ut og
   produksjonstestes.
+- Automatisk resultatsynkronisering må aktiveres med `SYNC_CRON_SECRET` og
+  `supabase-sync-schedule.sql`.
 - Norske TV-kanaler er ikke lagt inn ennå.
 
 ## Databasemigrasjoner

@@ -20,6 +20,14 @@
 - Senere sluttspillrunder oppdateres nå også mens brukeren står i
   Sluttspill-fanen.
 
+## Automatisk poengoppdatering
+
+- `sync-world-cup` kan nå kjøres sikkert fra en Supabase-tidsplan.
+- `supabase-sync-schedule.sql` vekker synkroniseringen hvert 15. minutt.
+- Football-data.org kalles først to timer etter kampstart og deretter høyst
+  én gang per time mens aktuelle kamper fortsatt ikke er ferdige.
+- Admin-knappen for manuell oppdatering beholdes som reserve.
+
 ## Utrulling
 
 1. Kjør `supabase-scoreboards-2026-setup.sql` i Supabase SQL Editor.
