@@ -48,12 +48,12 @@ Deno.serve(async (request) => {
     }
 
     if (isScheduledSync) {
-      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      const fifteenMinutesAhead = new Date(Date.now() + 15 * 60 * 1000).toISOString();
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       const { data: dueMatches, error: dueMatchesError } = await adminClient
         .from("matches")
         .select("id,kickoff_at,status,last_synced_at")
-        .lte("kickoff_at", twoHoursAgo)
+        .lte("kickoff_at", fifteenMinutesAhead)
         .neq("status", "finished");
       if (dueMatchesError) throw dueMatchesError;
 
