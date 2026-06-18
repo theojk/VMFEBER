@@ -23,6 +23,8 @@ const state = {
   theme: localStorage.getItem("vmFeberTheme") || "system",
   liveGroupEnabled: localStorage.getItem("vmFeberLiveGroup") !== "off",
   activeLiveGroup: null,
+  autoRefreshTimer: null,
+  lastAutoRefreshAt: 0,
 };
 
 const competitions = [
@@ -42,6 +44,7 @@ const competitions = [
 
 const rules = [
   ["Riktig resultat", "3 poeng"],
+  ["Riktig målforskjell", "2 poeng"],
   ["Riktig vinner eller uavgjort", "1 poeng"],
   ["Riktig gruppeplassering", "2 poeng"],
   ["Riktig finalist", "4 poeng"],
@@ -98,23 +101,26 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-const TOURNAMENT_TIME_ZONE = "America/New_York";
+const TOURNAMENT_TIME_ZONE = "Europe/Oslo";
+const TOURNAMENT_DAY_START_HOUR = 7;
 
 function tournamentDateKey(date) {
+  const shiftedDate = new Date(new Date(date).getTime() - TOURNAMENT_DAY_START_HOUR * 60 * 60 * 1000);
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: TOURNAMENT_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date(date));
+  }).format(shiftedDate);
 }
 
 function formatTournamentDay(date) {
+  const shiftedDate = new Date(new Date(date).getTime() - TOURNAMENT_DAY_START_HOUR * 60 * 60 * 1000);
   return new Intl.DateTimeFormat("nb-NO", {
     timeZone: TOURNAMENT_TIME_ZONE,
     day: "numeric",
     month: "long",
-  }).format(new Date(date));
+  }).format(shiftedDate);
 }
 
 function chronologicalMatches() {
@@ -171,7 +177,7 @@ async function loadMatches() {
 
   const { data, error } = await window.vmFeberSupabase
     .from("matches")
-    .select("id,stage,group_name,home_team,away_team,home_crest,away_crest,kickoff_at,status")
+    .select("id,stage,group_name,home_team,away_team,home_crest,away_crest,kickoff_at,status,home_score,away_score,extra_time_home_score,extra_time_away_score,penalty_home_score,penalty_away_score")
     .order("kickoff_at", { ascending: true });
 
   if (error || !data?.length) return;
@@ -189,6 +195,13 @@ async function loadMatches() {
     awayColor: "#e9efe7",
     date: formatKickoff(match.kickoff_at),
     kickoffAt: match.kickoff_at,
+    status: match.status,
+    resultHomeScore: match.home_score,
+    resultAwayScore: match.away_score,
+    resultExtraHomeScore: match.extra_time_home_score,
+    resultExtraAwayScore: match.extra_time_away_score,
+    resultPenaltyHomeScore: match.penalty_home_score,
+    resultPenaltyAwayScore: match.penalty_away_score,
     deadline: "Daglig: kampstart",
   }));
 }
@@ -211,7 +224,7 @@ async function loadPredictions() {
 
   const { data: predictionRows } = await window.vmFeberSupabase
     .from("match_predictions")
-    .select("competition_id,match_id,home_score,away_score,extra_time_home_score,extra_time_away_score,penalty_home_score,penalty_away_score,source,updated_at");
+    .select("competition_id,match_id,home_score,away_score,extra_time_home_score,extra_time_away_score,penalty_home_score,penalty_away_score,points,source,updated_at");
 
   state.predictions = Object.fromEntries(
     (predictionRows || []).map((prediction) => [
@@ -231,6 +244,40 @@ async function loadBackups() {
     .limit(30);
 
   state.backups = data || [];
+}
+
+function hasDirtyPredictionRows() {
+  return Boolean(document.querySelector("#matchList [data-dirty='true']"));
+}
+
+async function refreshLiveData({ force = false } = {}) {
+  if (!state.supabaseReady) return;
+  const now = Date.now();
+  if (!force && now - state.lastAutoRefreshAt < 55 * 1000) return;
+  state.lastAutoRefreshAt = now;
+
+  const canRenderPredictions = !hasDirtyPredictionRows()
+    && !document.querySelector("#matchList input:focus");
+  await Promise.all([loadMatches(), loadPredictions()]);
+  updateDashboard();
+  if (canRenderPredictions) renderMatches();
+  const activeView = document.querySelector(".view.active")?.id;
+  if (activeView === "leaderboards") renderLeaderboard();
+  if (activeView === "settings" && state.isAdmin) {
+    await loadAdminData();
+    renderAdmin();
+  }
+}
+
+function startAutoRefresh() {
+  if (state.autoRefreshTimer || !state.supabaseReady) return;
+  state.autoRefreshTimer = window.setInterval(() => {
+    if (document.visibilityState === "visible") refreshLiveData();
+  }, 60 * 1000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshLiveData({ force: true });
+  });
+  window.addEventListener("focus", () => refreshLiveData({ force: true }));
 }
 
 async function loadAdminData() {
@@ -388,6 +435,7 @@ async function savePrediction(matchId) {
 
   const saved = Array.isArray(data) ? data[0] : data;
   state.predictions[predictionKey(saved.competition_id, saved.match_id)] = saved;
+  delete row.dataset.dirty;
   setPredictionFeedback("Tipset er lagret.", "success");
   button.disabled = false;
   button.textContent = "Lagret";
@@ -447,6 +495,7 @@ function randomizeVisiblePredictions() {
   }
 
   rows.forEach((row) => {
+    row.dataset.dirty = "true";
     const home = randomScore();
     const away = randomScore();
     row.querySelector('[data-score="home"]').value = home;
@@ -496,8 +545,10 @@ async function syncWorldCupMatches() {
       return;
     }
 
-    await loadMatches();
+    await Promise.all([loadMatches(), loadPredictions()]);
     renderMatches();
+    updateDashboard();
+    renderLeaderboard();
     feedback.textContent = `${data.synced} kamper ble synkronisert.`;
   } catch (error) {
     feedback.textContent = `Synkronisering feilet: ${error.message || String(error)}`;
@@ -942,6 +993,29 @@ function renderBonusPanel() {
   `;
 }
 
+function finishedMatchResult(match) {
+  if (match.status !== "finished" || match.resultHomeScore == null || match.resultAwayScore == null) return "";
+  let result = `Resultat: ${match.resultHomeScore}–${match.resultAwayScore}`;
+  if (match.resultExtraHomeScore != null && match.resultExtraAwayScore != null) {
+    result += ` · etter 120 min ${match.resultExtraHomeScore}–${match.resultExtraAwayScore}`;
+  }
+  if (match.resultPenaltyHomeScore != null && match.resultPenaltyAwayScore != null) {
+    result += ` · straffer ${match.resultPenaltyHomeScore}–${match.resultPenaltyAwayScore}`;
+  }
+  return result;
+}
+
+function predictionScoreBadge(match, prediction, locked) {
+  if (match.status === "finished") {
+    if (!prediction) return '<span class="prediction-points-badge points-none">Ikke tippet</span>';
+    const points = Number(prediction.points || 0);
+    return `<span class="prediction-points-badge points-${points}">${points} poeng</span>`;
+  }
+  return `<button class="save-prediction" data-save-prediction="${match.id}" ${state.sessionUserId && !locked ? "" : "disabled"}>
+    ${locked ? "Låst" : prediction?.inheritedFromFull ? "Bruk Full VM" : prediction ? "Lagret" : "Lagre"}
+  </button>`;
+}
+
 function renderMatches() {
   const projectedKnockoutMatchups = state.predictionMode === "full"
     ? buildProjectedKnockoutMatchups()
@@ -966,18 +1040,17 @@ function renderMatches() {
         const deadlineLabel = state.predictionMode === "daily"
           ? "Frist: kampstart"
           : `Frist: ${formatDeadline(predictionDeadline(match))}`;
+        const resultLabel = finishedMatchResult(match);
         return `${heading}
-        <article class="match-row" data-match-id="${match.id}" data-match-number="${match.number || ""}">
+        <article class="match-row ${match.status === "finished" ? "match-finished" : ""}" data-match-id="${match.id}" data-match-number="${match.number || ""}">
           <div class="team" data-projected-team="home">${home.crest ? `<img class="flag" src="${home.crest}" alt="" />` : `<span class="flag" style="background:${match.homeColor}"></span>`}<span class="team-details"><strong>${escapeHtml(home.name)}</strong>${home.origin ? `<small>${escapeHtml(home.origin)}</small>` : ""}</span></div>
           <div class="score-inputs">
             <input type="number" min="0" data-score="home" value="${prediction?.home_score ?? ""}" aria-label="${match.home} mål" ${disabled} />
             <input type="number" min="0" data-score="away" value="${prediction?.away_score ?? ""}" aria-label="${match.away} mål" ${disabled} />
           </div>
           <div class="team" data-projected-team="away">${away.crest ? `<img class="flag" src="${away.crest}" alt="" />` : `<span class="flag" style="background:${match.awayColor}"></span>`}<span class="team-details"><strong>${escapeHtml(away.name)}</strong>${away.origin ? `<small>${escapeHtml(away.origin)}</small>` : ""}</span></div>
-          <div class="deadline"><span class="match-stage-label">${escapeHtml(stageLabel(match))}</span><br />${match.date}<br />${deadlineLabel}</div>
-          <button class="save-prediction" data-save-prediction="${match.id}" ${state.sessionUserId && !locked ? "" : "disabled"}>
-            ${locked ? "Låst" : prediction?.inheritedFromFull ? "Bruk Full VM" : prediction ? "Lagret" : "Lagre"}
-          </button>
+          <div class="deadline"><span class="match-stage-label">${escapeHtml(stageLabel(match))}</span><br />${match.date}<br />${resultLabel ? `<strong class="finished-result">${escapeHtml(resultLabel)}</strong>` : deadlineLabel}</div>
+          ${predictionScoreBadge(match, prediction, locked)}
           ${knockoutTiebreakFields(match, prediction, locked)}
         </article>
       `;
@@ -1662,6 +1735,7 @@ function memberPredictionLabel(row) {
 function predictionPointsLabel(row) {
   if (row.result_home_score == null || row.result_away_score == null) return "Venter";
   if (row.points === 3) return "3 poeng · eksakt resultat";
+  if (row.points === 2) return "2 poeng · riktig målforskjell";
   if (row.points === 1) return "1 poeng · riktig kamputfall";
   return "0 poeng";
 }
@@ -2182,6 +2256,7 @@ function bindEvents() {
   document.querySelector("#matchList").addEventListener("input", (event) => {
     if (!event.target.matches("[data-score], [data-extra-score], [data-penalty-score]")) return;
     const row = event.target.closest("[data-match-id]");
+    row.dataset.dirty = "true";
     updateKnockoutTiebreakVisibility(row);
     showLiveGroupForMatchRow(row);
     row.querySelector(".save-prediction").textContent = "Lagre";
@@ -2297,6 +2372,7 @@ async function init() {
   renderUser();
   updateDashboard();
   bindEvents();
+  startAutoRefresh();
   if (window.lucide) window.lucide.createIcons();
 }
 

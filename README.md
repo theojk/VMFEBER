@@ -13,7 +13,7 @@ Se [PROJECT-STATUS.md](PROJECT-STATUS.md) for prosjektstatus,
 - To konkurranseformer:
   - Full VM: kamp 1–2 låses ved egen kampstart, resten ved kampstart i kamp 3
   - Daglig konkurranse med frist ved kampstart for hver kamp
-  - Kampdag og «dagens kamper» følger `America/New_York`
+  - Kampdag og «dagens kamper» følger norsk tid med døgnskifte kl. 07:00
 - Private og offentlige ligaer med kode, beskrivelse og eierstyrt redigering
 - Poengtavler som bare vises for ligaer brukeren er medlem av
 - Klikkbart tipsinnsyn mellom ligamedlemmer etter relevant frist
@@ -107,8 +107,8 @@ For automatisk kjøring:
 5. Kjor `supabase-sync-schedule.sql` i Supabase SQL Editor.
 
 Tidsplanen vekker funksjonen hvert 15. minutt, men bruker bare football-data.org
-når en kamp har pågått i minst to timer. Dersom kampen fortsatt ikke er
-`finished`, gjøres neste API-kontroll tidligst én time senere. Poeng beregnes
+når en kamp starter innen 15 minutter eller allerede er i gang og ikke er
+`finished`. Neste API-kontroll gjøres tidligst én time senere. Poeng beregnes
 etter hver faktiske resultatsynkronisering.
 
 ## Lagring av tips
@@ -193,14 +193,32 @@ Kun ligaeieren kan endre beskrivelsen etter at ligaen er opprettet.
 
 Poengtavlene summerer feltet `points` i lagrede kamptips. Kampresultater ma
 derfor poengberegnes etter synkronisering for at listene skal fa poeng. Edge
-Function `sync-world-cup` beregner 3 poeng for eksakt resultat og 1 poeng for
-riktig kamputfall etter synkronisering. `supabase-sync-schedule.sql` må være
-aktivert for at dette skal skje automatisk.
+Function `sync-world-cup` beregner 3 poeng for eksakt resultat, 2 poeng for
+riktig målforskjell og 1 poeng for riktig kamputfall etter synkronisering.
+Poengnivåene summeres ikke. `supabase-sync-schedule.sql` må være aktivert for
+at dette skal skje automatisk.
 
 ## Automatisk backup av alle tips
 
 Ved hver frist lagres et uforanderlig snapshot av alle relevante tips i
 `prediction_backups`. Samme snapshot sendes som CSV til admin.
+
+## Daglig poengkontroll på e-post
+
+`send-points-health-report` kontrollerer hver morgen:
+
+- at ferdige kamper har sluttresultat
+- at alle tips på ferdige kamper har riktig 3/2/1/0-poeng
+- hvor mange kamper og tips som ble kontrollert
+
+Rapporten sendes til `BACKUP_EMAIL` kl. 07:00 norsk tid.
+
+1. Lagre en lang tilfeldig nøkkel som Edge Function-secret
+   `POINTS_REPORT_CRON_SECRET`.
+2. Deploy `supabase/functions/send-points-health-report/index.ts`.
+3. Fyll inn prosjektverdiene og samme nøkkel i
+   `supabase-points-health-report-schedule.sql`.
+4. Kjør SQL-filen i Supabase SQL Editor.
 
 1. Kjor `supabase-backup-setup.sql` i SQL Editor.
 2. Deploy `supabase/functions/create-prediction-backup/index.ts` som

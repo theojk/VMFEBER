@@ -33,9 +33,11 @@ Ikke legg service role-nøkkel, Football-Data-nøkkel, Resend-nøkkel eller
 - Testbrukerstøtte er skrevet, men databaseoppsettet bør verifiseres i
   produksjon før funksjonen regnes som ferdig utrullet.
 - Kamp- og resultatsynkronisering med poengberegning. Kampstyrt automatikk er
-  klargjort: første kontroll to timer etter kampstart, deretter høyst én
+  klargjort: kontroll fra 15 minutter før kampstart, deretter høyst én
   API-kontroll per time til alle aktuelle kamper er ferdige.
 - Automatiske tipsbackuper og backup-e-post.
+- Daglig poengkontroll på e-post kl. 07:00 er klargjort, men må deployes og
+  aktiveres med `supabase-points-health-report-schedule.sql`.
 - Projiserte tabeller for alle 12 grupper og rangering av tredjeplasser.
 - Projisert sluttspill som følger brukerens tips og FIFAs offisielle Annex C-
   fordeling av de åtte beste tredjeplassene.

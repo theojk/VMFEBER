@@ -26,8 +26,8 @@ select vault.create_secret(
 );
 
 -- Vekker funksjonen hvert 15. minutt. Den kaller bare football-data.org nar:
--- 1. minst en kamp startet for minst to timer siden og ikke er finished, og
--- 2. det er minst en time siden forrige kontroll.
+-- 1. minst en kamp starter innen 15 minutter eller allerede er i gang/ikke finished, og
+-- 2. det er minst en time siden forrige kontroll av kampdata.
 select cron.schedule(
   'vm-feber-resultatsynkronisering',
   '*/15 * * * *',

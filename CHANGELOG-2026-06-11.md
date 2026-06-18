@@ -10,8 +10,9 @@
 
 ## Kampdag
 
-- «Dagens kamper», daglig tipping og dagens poengtavle følger
-  `America/New_York`.
+- «Dagens kamper», daglig tipping og dagens poengtavle følger norsk tid med
+  døgnskifte kl. 07:00.
+- Kamper fra kl. 00:00 til 06:59 tilhører kampdagen før.
 - Kampstart vises fortsatt i norsk tid.
 - Oversikt viser nå en egen Nyheter-fane med de nye fristreglene.
 
@@ -24,8 +25,10 @@
 
 - `sync-world-cup` kan nå kjøres sikkert fra en Supabase-tidsplan.
 - `supabase-sync-schedule.sql` vekker synkroniseringen hvert 15. minutt.
-- Football-data.org kalles først to timer etter kampstart og deretter høyst
-  én gang per time mens aktuelle kamper fortsatt ikke er ferdige.
+- Football-data.org kalles fra 15 minutter før kampstart og deretter høyst én
+  gang per time mens aktuelle kamper fortsatt ikke er ferdige.
+- Siden henter ferske kampdata automatisk hvert minutt og når fanen åpnes igjen,
+  uten å overskrive ulagrede tips.
 - Admin-knappen for manuell oppdatering beholdes som reserve.
 
 ## Ny kamppoengregel
@@ -41,6 +44,12 @@
 - Poeng vises i stedet for «Låst»: mørkegrønn for 3, lysegrønn for 2,
   gul for 1 og rød for 0 poeng.
 - Adminsynkronisering oppdaterer kampkort og poengvisning uten sidelasting.
+
+## Daglig poengrapport
+
+- Ny Edge Function kontrollerer ferdige kamper og 3/2/1/0-poengberegningen.
+- E-post sendes til admin hver morgen kl. 07:00 norsk tid.
+- Rapporten viser antall kontrollerte kamper/tips og konkrete poengavvik.
 
 ## Utrulling
 
